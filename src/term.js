@@ -397,7 +397,8 @@ Terminal.defaults = {
   // escapeKey: null,
   debug: false,
   useStyle: false,
-  allowKeyPaste: false
+  allowKeyPaste: false,
+  allowOuterScroll: false
 };
 
 Terminal.options = {};
@@ -1089,13 +1090,20 @@ Terminal.prototype.bindMouse = function() {
   //  on(self.document, 'mousemove', sendMove);
   //}
 
+  // Does not cancel event while scroll to top/bottom
+  function shouldCancel(){
+      return self.options.allowOuterScroll && !(self.ydisp >= self.lines.length - self.rows || self.ydisp == 0);
+  }
+
   on(el, wheelEvent, function(ev) {
     if (!self.mouseEvents) return;
     if (self.x10Mouse
         || self.vt300Mouse
         || self.decLocator) return;
     sendButton(ev);
-    return cancel(ev);
+    if(shouldCancel()){
+        return cancel(ev);
+    }
   });
 
   // allow mousewheel scrolling in
@@ -1108,7 +1116,9 @@ Terminal.prototype.bindMouse = function() {
     } else {
       self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
     }
-    return cancel(ev);
+    if(shouldCancel()){
+        return cancel(ev);
+    }
   });
 };
 
@@ -5728,3 +5738,4 @@ if (typeof module !== 'undefined') {
 }).call(function() {
   return this || (typeof window !== 'undefined' ? window : global);
 }());
+
