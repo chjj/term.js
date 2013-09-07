@@ -444,7 +444,8 @@ Terminal.defaults = {
   scrollback: 1000,
   screenKeys: false,
   debug: false,
-  useStyle: false
+  useStyle: false,
+  kbLayout: 'us',
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -2810,7 +2811,84 @@ Terminal.prototype.keyDown = function(ev) {
         } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
           key = '\x1b' + (ev.keyCode - 48);
         }
-      }
+      } if (this['kbLayout'] != 'us' && ((this.isMac && ev.altKey) || (!this.isMac && ev.altKey && ev.ctrlKey))) {
+        // This is to support keyboards with third-level characters
+          if (this['kbLayout'] == 'ee') {
+          // Estonian
+            if(!this.isMac) {
+              if (ev.keyCode === 50) {
+                // AltGr-2 => @
+                key = String.fromCharCode(64);
+              } else if (ev.keyCode === 51) {
+                // AltGr-3 => £
+                key = String.fromCharCode(163);
+              } else if (ev.keyCode === 52) {
+                // AltGr-4 => $
+                key = String.fromCharCode(36);
+              } else if (ev.keyCode === 69) {
+                // AltGr-e => €
+                key = String.fromCharCode(8364);
+              } else if (ev.keyCode === 55) {
+                // AltGr-7 => {
+                key = String.fromCharCode(123);
+              } else if (ev.keyCode === 56) {
+                // AltGr-8 => [
+                key = String.fromCharCode(91);
+              } else if (ev.keyCode === 57) {
+                // AltGr-9 => ]
+                key = String.fromCharCode(93);
+              } else if (ev.keyCode === 48) {
+                // AltGr-0 => }
+                key = String.fromCharCode(125);
+              } else if (ev.keyCode === 189) {
+                // AltGr-+ => \
+                key = String.fromCharCode(92);
+              } else if (ev.keyCode === 226) {
+                // AltGr-< => |
+                key = String.fromCharCode(124);
+              }
+            } else if (this.isMac) {
+              if (ev.keyCode === 50) {
+                // Alt-2 => @
+                key = String.fromCharCode(64);
+              } else if (ev.keyCode === 51) {
+                // Alt-3 => £
+                key = String.fromCharCode(163);
+              } else if (ev.keyCode === 52) {
+                // Alt-4 => $
+                key = String.fromCharCode(36);
+              } else if (ev.keyCode === 219) {
+                if (ev.keyIdentifier === 'U+0037') {
+                  // Alt-7 => {
+                  key = String.fromCharCode(123);
+                } else if (ev.keyIdentifier === 'U+0038') {
+                  // Alt-8 => [
+                  key = String.fromCharCode(91);
+                }
+              } else if (ev.keyCode === 221) {
+                if (ev.keyIdentifier === 'U+0039') {
+                  // Alt-9 => ]
+                  key = String.fromCharCode(93);
+                } else if (ev.keyIdentifier === 'U+0030') {
+                  // Alt-0 => }
+                  key = String.fromCharCode(125);
+                }
+              } else if (ev.keyCode === 220) {
+                if (ev.keyIdentifier === 'U+002B') {
+                  // Alt-+ => \
+                  key = String.fromCharCode(92);
+                } else if (ev.keyIdentifier === 'U+003C') {
+                  // Alt-< => |
+                  key = String.fromCharCode(124);
+                }
+              }
+            }
+          } else if (['fr','de','uk','hr','si','ba','rs','be','pl','tr'].indexOf(this['kbLayout'] > -1)) {
+            console.log('Not implemented');
+          } else {
+            console.log('Unknown keyboard layout: %s', this['kbLayout']);
+          }
+        }
       break;
   }
 
