@@ -1313,7 +1313,7 @@ Terminal.prototype.refresh = function(start, end) {
       out += '</span>';
     }
     
-    out = out.replace(/(&nbsp;)+$/, '');
+    out = out.replace(/(&nbsp;)+$/, '&nbsp;');
 
     this.children[y].innerHTML = out;
   }
