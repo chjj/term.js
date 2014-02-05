@@ -519,7 +519,7 @@ Terminal.bindKeys = function(document) {
         || target === Terminal.focus.body
         || target === Terminal._textarea
         || target === Terminal.focus.parent) {
-        return Terminal.focus.keyDown(ev);
+      return Terminal.focus.keyDown(ev);
     }
   }, true);
 
@@ -533,7 +533,7 @@ Terminal.bindKeys = function(document) {
         || target === Terminal.focus.body
         || target === Terminal._textarea
         || target === Terminal.focus.parent) {
-        return Terminal.focus.keyPress(ev);
+      return Terminal.focus.keyPress(ev);
     }
   }, true);
 
@@ -735,9 +735,9 @@ Terminal.prototype.open = function(parent) {
     self.focus();
     /*
       anandp:
-      add firefox to this because it only allows paste to textareas
+      some browsers only allow paste to textareas
     */
-      Terminal._textarea.focus();
+    Terminal._textarea.focus();
   });
 
   // This causes slightly funky behavior.
@@ -2632,10 +2632,10 @@ Terminal.prototype.keyDown = function(ev) {
   this.handler(key);
   /*
     anandp:
-     If we are on a mac system and we press command+p do not cancel event
+    If we are on a mac system and we press command+p do not cancel event
   */
-  if ((ev.keyCode === 86) && 
-      ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey))) {
+  if ((ev.keyCode === 86) 
+    && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey))) {
     return true; 
   } 
 
@@ -2670,14 +2670,14 @@ Terminal.prototype.keyPress = function(ev) {
     anandp:
     for mac allow paste event propagation 
   */
-  if (!((key === 118) && 
-      ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
+  if (!((key === 118)
+    && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
     cancel(ev);
   }
 
-  if (!key || ev.ctrlKey || 
-      (ev.altKey && (key != 118)) || 
-      (ev.metaKey && (key != 118))) return false;
+  if (!key || ev.ctrlKey 
+    || (ev.altKey && (key != 118))
+    || (ev.metaKey && (key != 118))) return false;
 
   key = String.fromCharCode(key);
 
@@ -2700,8 +2700,8 @@ Terminal.prototype.keyPress = function(ev) {
     anandp:
     on mac do not allow 'v' key to be sent during paste
   */
-  if (!((key === 'v') && 
-      ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
+  if (!((key === 'v')
+    && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
     this.handler(key);
   }
 
@@ -5780,4 +5780,3 @@ if (typeof module !== 'undefined') {
 }).call(function() {
   return this || (typeof window !== 'undefined' ? window : global);
 }());
-
