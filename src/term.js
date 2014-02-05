@@ -469,10 +469,11 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindKeys(document);
 
   Terminal.bindCopy(document);
-
-  if (this.isIpad || this.isIphone) {
-    Terminal.fixIpad(document);
-  }
+  /*
+    anandp:
+    some browsers need to use textarea to have paste working    
+  */
+  Terminal.fixIpad(document);
 
   if (this.useStyle) {
     Terminal.insertStyle(document, this.colors[256], this.colors[257]);
@@ -518,7 +519,7 @@ Terminal.bindKeys = function(document) {
         || target === Terminal.focus.body
         || target === Terminal._textarea
         || target === Terminal.focus.parent) {
-      return Terminal.focus.keyDown(ev);
+        return Terminal.focus.keyDown(ev);
     }
   }, true);
 
@@ -532,7 +533,7 @@ Terminal.bindKeys = function(document) {
         || target === Terminal.focus.body
         || target === Terminal._textarea
         || target === Terminal.focus.parent) {
-      return Terminal.focus.keyPress(ev);
+        return Terminal.focus.keyPress(ev);
     }
   }, true);
 
@@ -732,9 +733,11 @@ Terminal.prototype.open = function(parent) {
   // to focus and paste behavior.
   on(this.element, 'focus', function() {
     self.focus();
-    if (self.isIpad || self.isIphone) {
+    /*
+      anandp:
+      add firefox to this because it only allows paste to textareas
+    */
       Terminal._textarea.focus();
-    }
   });
 
   // This causes slightly funky behavior.
@@ -2627,6 +2630,14 @@ Terminal.prototype.keyDown = function(ev) {
 
   this.showCursor();
   this.handler(key);
+  /*
+    anandp:
+     If we are on a mac system and we press command+p do not cancel event
+  */
+  if ((ev.keyCode === 86) && 
+      ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey))) {
+    return true; 
+  } 
 
   return cancel(ev);
 };
@@ -2646,8 +2657,6 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
-  cancel(ev);
-
   if (ev.charCode) {
     key = ev.charCode;
   } else if (ev.which == null) {
@@ -2657,8 +2666,18 @@ Terminal.prototype.keyPress = function(ev) {
   } else {
     return false;
   }
+  /*
+    anandp:
+    for mac allow paste event propagation 
+  */
+  if (!((key === 118) && 
+      ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
+    cancel(ev);
+  }
 
-  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+  if (!key || ev.ctrlKey || 
+      (ev.altKey && (key != 118)) || 
+      (ev.metaKey && (key != 118))) return false;
 
   key = String.fromCharCode(key);
 
@@ -2677,7 +2696,14 @@ Terminal.prototype.keyPress = function(ev) {
   this.emit('key', key, ev);
 
   this.showCursor();
-  this.handler(key);
+  /*
+    anandp:
+    on mac do not allow 'v' key to be sent during paste
+  */
+  if (!((key === 'v') && 
+      ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
+    this.handler(key);
+  }
 
   return false;
 };
@@ -5754,3 +5780,4 @@ if (typeof module !== 'undefined') {
 }).call(function() {
   return this || (typeof window !== 'undefined' ? window : global);
 }());
+
