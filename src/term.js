@@ -613,10 +613,6 @@ Terminal.fixIpad = function(document) {
   document.getElementsByTagName('body')[0].appendChild(textarea);
 
   Terminal._textarea = textarea;
-
-  setTimeout(function() {
-    textarea.focus();
-  }, 1000);
 };
 
 /**
@@ -730,14 +726,6 @@ Terminal.prototype.open = function(parent) {
   if (Terminal.brokenBold == null) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
-
-  // this.emit('open');
-
-  // This can be useful for pasting,
-  // as well as the iPad fix.
-  setTimeout(function() {
-    self.element.focus();
-  }, 100);
 };
 
 // XTerm mouse events
