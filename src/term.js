@@ -2792,6 +2792,13 @@ Terminal.prototype.resize = function(x, y) {
   // screen buffer. just set it
   // to null for now.
   this.normal = null;
+
+  //Resizing terminal according to window size
+  Terminal.call(this, {
+    cols: this.cols,
+    rows: this.rows
+  });
+
 };
 
 Terminal.prototype.updateRange = function(y) {
