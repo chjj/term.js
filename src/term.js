@@ -612,8 +612,8 @@ Terminal.fixIpad = function(document) {
   textarea.style.backgroundColor = 'transparent';
   textarea.style.borderStyle = 'none';
   textarea.style.outlineStyle = 'none';
-  textarea.autocapitalize='none';
-  textarea.autocorrect='off';
+  textarea.autocapitalize = 'none';
+  textarea.autocorrect = 'off';
 
   document.getElementsByTagName('body')[0].appendChild(textarea);
 
