@@ -2696,6 +2696,7 @@ Terminal.prototype.send = function(data) {
 };
 
 Terminal.prototype.bell = function() {
+  this.emit('bell');
   if (!this.visualBell) return;
   var self = this;
   this.element.style.borderColor = 'white';
