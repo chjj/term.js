@@ -168,7 +168,7 @@ function Terminal(options) {
     options.colors = options.colors.slice(0, -2).concat(
       Terminal._colors.slice(8, -2), options.colors.slice(-2));
   } else if (options.colors.length === 18) {
-    options.colors = options.colors.concat(
+    options.colors = options.colors.slice(0, -2).concat(
       Terminal._colors.slice(16, -2), options.colors.slice(-2));
   }
   this.colors = options.colors;
