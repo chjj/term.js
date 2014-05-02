@@ -703,6 +703,7 @@ Terminal.prototype.open = function(parent) {
   this.element.className = 'terminal';
   this.element.style.outline = 'none';
   this.element.setAttribute('tabindex', 0);
+  this.element.setAttribute('spellcheck', 'false');
   this.element.style.backgroundColor = this.colors[256];
   this.element.style.color = this.colors[257];
 
