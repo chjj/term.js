@@ -740,7 +740,7 @@ Terminal.prototype.open = function(parent) {
   this.focus();
 
   // Start blinking the cursor.
-  this.startBlink();
+  //this.startBlink();
 
   // Bind to DOM events related
   // to focus and paste behavior.
@@ -2612,13 +2612,103 @@ Terminal.prototype.keyDown = function(ev) {
           // ^] - group sep
           key = String.fromCharCode(29);
         }
-      } else if (!this.isMac && ev.altKey) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
-        } else if (ev.keyCode === 192) {
+      } else if (ev.altKey) {
+        switch (ev.keyCode) {
+        case 59:
+          if (ev.shiftKey) {
+            key = '\x1b:';
+            break;
+          }
+          key = '\x1b;';
+          break;
+        case 61:
+          if (ev.shiftKey) {
+            key = '\x1b+';
+            break;
+          }
+          key = '\x1b=';
+          break;
+        case 188:
+          if (ev.shiftKey) {
+            key = '\x1b<';
+            break;
+          }
+          key = '\x1b,';
+          break;
+        case 109:
+          if (ev.shiftKey) {
+            key = '\x1b_';
+            break;
+          }
+          key = '\x1b-';
+          break;
+        case 190:
+          if (ev.shiftKey) {
+            key = '\x1b>';
+            break;
+          }
+          key = '\x1b.';
+          break;
+        case 191:
+          if (ev.shiftKey) {
+            key = '\x1b?';
+            break;
+          }
+          key = '\x1b/';
+          break;
+        case 192:
+          if (ev.shiftKey) {
+            key = '\x1b~';
+            break;
+          }
           key = '\x1b`';
-        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-          key = '\x1b' + (ev.keyCode - 48);
+          break;
+        case 219:
+          if (ev.shiftKey) {
+            key = '\x1b{';
+            break;
+          }
+          key = '\x1b[';
+          break;
+        case 220:
+          if (ev.shiftKey) {
+            key = '\x1b|';
+            break;
+          }
+          key = '\x1b\\';
+          break;
+        case 221:
+          if (ev.shiftKey) {
+            key = '\x1b}';
+            break;
+          }
+          key = '\x1b]';
+          break;
+        case 222:
+          if (ev.shiftKey) {
+            key = '\x1b"';
+            break;
+          }
+          key = '\x1b]\'';
+          break;
+        default:
+          if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+            if (ev.shiftKey) {
+              key = '\x1b' + String.fromCharCode(ev.keyCode);
+            } else {
+              key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+            }
+          } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
+            if (ev.shiftKey) {
+              if (ev.keyCode == 50) {
+                key = '\x1b' + String.fromCharCode(ev.keyCode - 48 + 32 + 32);
+              } else {
+                key = '\x1b' + String.fromCharCode(ev.keyCode - 48 + 32);
+              }
+            } else {
+              key = '\x1b' + (ev.keyCode - 48);
+            }
+          }
         }
       } else if (this.isMac && ev.metaKey) {
         return true;
