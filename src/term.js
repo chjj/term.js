@@ -470,8 +470,8 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindCopy(document);
 
-  if (this.isIpad || this.isIphone) {
-    Terminal.fixIpad(document);
+  if (this.isMobile) {
+    this.fixMobile(document);
   }
 
   if (this.useStyle) {
@@ -598,10 +598,12 @@ Terminal.bindCopy = function(document) {
 };
 
 /**
- * Fix iPad - no idea if this works
+ * Fix Mobile
  */
 
-Terminal.fixIpad = function(document) {
+Terminal.prototype.fixMobile = function(document) {
+  var self = this;
+
   var textarea = document.createElement('textarea');
   textarea.style.position = 'absolute';
   textarea.style.left = '-32000px';
@@ -622,6 +624,15 @@ Terminal.fixIpad = function(document) {
   setTimeout(function() {
     textarea.focus();
   }, 1000);
+
+  if (this.isAndroid) {
+    on(textarea, 'change', function() {
+      var value = textarea.textContent || textarea.value;
+      textarea.value = '';
+      textarea.textContent = '';
+      self.send(value + '\r');
+    });
+  }
 };
 
 /**
@@ -695,6 +706,8 @@ Terminal.prototype.open = function(parent) {
     this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
     this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
     this.isIphone = !!~this.context.navigator.userAgent.indexOf('iPhone');
+    this.isAndroid = !!~this.context.navigator.userAgent.indexOf('Android');
+    this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
   }
 
@@ -733,7 +746,7 @@ Terminal.prototype.open = function(parent) {
   // to focus and paste behavior.
   on(this.element, 'focus', function() {
     self.focus();
-    if (self.isIpad || self.isIphone) {
+    if (self.isMobile) {
       Terminal._textarea.focus();
     }
   });
