@@ -2612,7 +2612,7 @@ Terminal.prototype.keyDown = function(ev) {
           // ^] - group sep
           key = String.fromCharCode(29);
         }
-      } else if ((!this.isMac && ev.altKey) || (this.isMac && ev.metaKey)) {
+      } else if (ev.altKey) {
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
         } else if (ev.keyCode === 192) {
