@@ -115,6 +115,7 @@ io.sockets.on('connection', function(sock) {
 
   socket.on('data', function(data) {
     if (stream) stream.write('IN: ' + data + '\n-\n');
+    //console.log(JSON.stringify(data));
     term.write(data);
   });
 

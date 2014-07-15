@@ -168,7 +168,7 @@ function Terminal(options) {
     options.colors = options.colors.slice(0, -2).concat(
       Terminal._colors.slice(8, -2), options.colors.slice(-2));
   } else if (options.colors.length === 18) {
-    options.colors = options.colors.concat(
+    options.colors = options.colors.slice(0, -2).concat(
       Terminal._colors.slice(16, -2), options.colors.slice(-2));
   }
   this.colors = options.colors;
@@ -474,6 +474,14 @@ Terminal.prototype.initGlobal = function() {
     some browsers need to use textarea to have paste working    
   */
   Terminal.fixIpad(document);
+
+  if (this.isMobile) {
+    this.fixMobile(document);
+  }
+
+  if (this.useStyle) {
+    Terminal.insertStyle(document, this.colors[256], this.colors[257]);
+  }
 };
 
 /**
@@ -595,10 +603,12 @@ Terminal.bindCopy = function(document) {
 };
 
 /**
- * Fix iPad - no idea if this works
+ * Fix Mobile
  */
 
-Terminal.fixIpad = function(document) {
+Terminal.prototype.fixMobile = function(document) {
+  var self = this;
+
   var textarea = document.createElement('textarea');
   textarea.style.position = 'absolute';
   textarea.style.width = '0px';
@@ -607,12 +617,71 @@ Terminal.fixIpad = function(document) {
   textarea.style.backgroundColor = 'transparent';
   textarea.style.borderStyle = 'none';
   textarea.style.outlineStyle = 'none';
-  textarea.autocapitalize='none';
-  textarea.autocorrect='off';
+  textarea.autocapitalize = 'none';
+  textarea.autocorrect = 'off';
 
   document.getElementsByTagName('body')[0].appendChild(textarea);
 
   Terminal._textarea = textarea;
+
+  setTimeout(function() {
+    textarea.focus();
+  }, 1000);
+
+  if (this.isAndroid) {
+    on(textarea, 'change', function() {
+      var value = textarea.textContent || textarea.value;
+      textarea.value = '';
+      textarea.textContent = '';
+      self.send(value + '\r');
+    });
+  }
+};
+
+/**
+ * Insert a default style
+ */
+
+Terminal.insertStyle = function(document, bg, fg) {
+  var style = document.getElementById('term-style');
+  if (style) return;
+
+  var head = document.getElementsByTagName('head')[0];
+  if (!head) return;
+
+  var style = document.createElement('style');
+  style.id = 'term-style';
+
+  // textContent doesn't work well with IE for <style> elements.
+  style.innerHTML = ''
+    + '.terminal {\n'
+    + '  float: left;\n'
+    + '  border: ' + bg + ' solid 5px;\n'
+    + '  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;\n'
+    + '  font-size: 11px;\n'
+    + '  color: ' + fg + ';\n'
+    + '  background: ' + bg + ';\n'
+    + '}\n'
+    + '\n'
+    + '.terminal-cursor {\n'
+    + '  color: ' + bg + ';\n'
+    + '  background: ' + fg + ';\n'
+    + '}\n';
+
+  // var out = '';
+  // each(Terminal.colors, function(color, i) {
+  //   if (i === 256) {
+  //     out += '\n.term-bg-color-default { background-color: ' + color + '; }';
+  //   }
+  //   if (i === 257) {
+  //     out += '\n.term-fg-color-default { color: ' + color + '; }';
+  //   }
+  //   out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
+  //   out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
+  // });
+  // style.innerHTML += out + '\n';
+
+  head.insertBefore(style, head.firstChild);
 };
 
 /**
@@ -640,6 +709,8 @@ Terminal.prototype.open = function(parent) {
     this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
     this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
     this.isIphone = !!~this.context.navigator.userAgent.indexOf('iPhone');
+    this.isAndroid = !!~this.context.navigator.userAgent.indexOf('Android');
+    this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
   }
 
@@ -648,6 +719,7 @@ Terminal.prototype.open = function(parent) {
   this.element.className = 'terminal';
   this.element.style.outline = 'none';
   this.element.setAttribute('tabindex', 0);
+  this.element.setAttribute('spellcheck', 'false');
   this.element.style.backgroundColor = this.colors[256];
   this.element.style.color = this.colors[257];
 
@@ -2658,6 +2730,7 @@ Terminal.prototype.send = function(data) {
 };
 
 Terminal.prototype.bell = function() {
+  this.emit('bell');
   if (!this.visualBell) return;
   var self = this;
   this.element.style.borderColor = 'white';
