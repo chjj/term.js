@@ -428,7 +428,7 @@ Terminal.prototype.focus = function() {
   //   ;
   // }
 
-  // this.emit('focus');
+  this.emit('focus');
 
   Terminal.focus = this;
 };
@@ -446,7 +446,7 @@ Terminal.prototype.blur = function() {
   //   ;
   // }
 
-  // this.emit('blur');
+  this.emit('blur');
 
   Terminal.focus = null;
 };
