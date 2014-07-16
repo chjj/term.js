@@ -469,11 +469,6 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindKeys(document);
 
   Terminal.bindCopy(document);
-  /*
-    anandp:
-    some browsers need to use textarea to have paste working    
-  */
-  Terminal.fixIpad(document);
 
   if (this.isMobile) {
     this.fixMobile(document);
@@ -749,11 +744,6 @@ Terminal.prototype.open = function(parent) {
   // to focus and paste behavior.
   on(this.element, 'focus', function() {
     self.focus();
-    /*
-      anandp:
-      some browsers only allow paste to textareas
-    */
-    Terminal._textarea.focus();
   });
 
   // This causes slightly funky behavior.
