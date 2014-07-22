@@ -649,15 +649,6 @@ Terminal.insertStyle = function(document, bg, fg) {
 
   // textContent doesn't work well with IE for <style> elements.
   style.innerHTML = ''
-    + '.terminal {\n'
-    + '  float: left;\n'
-    + '  border: ' + bg + ' solid 5px;\n'
-    + '  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;\n'
-    + '  font-size: 11px;\n'
-    + '  color: ' + fg + ';\n'
-    + '  background: ' + bg + ';\n'
-    + '}\n'
-    + '\n'
     + '.terminal-cursor {\n'
     + '  color: ' + bg + ';\n'
     + '  background: ' + fg + ';\n'
