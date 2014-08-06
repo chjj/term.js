@@ -1326,6 +1326,9 @@ Terminal.prototype.refresh = function(start, end) {
       out += '</span>';
     }
 
+    if (this.children[y] == null || this.children[y] == "undefined") {
+      this.children[y] = this.document.createElement("span");
+    }
     this.children[y].innerHTML = out;
   }
 
