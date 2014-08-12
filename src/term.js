@@ -2623,10 +2623,10 @@ Terminal.prototype.keyDown = function(ev) {
     anandp:
     If we are on a mac system and we press command+p do not cancel event
   */
-  if ((ev.keyCode === 86) 
+  if ((ev.keyCode === 86 || ev.keyCode === 67)
     && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey))) {
-    return true; 
-  } 
+    return true;
+  }
 
   return cancel(ev);
 };
