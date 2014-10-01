@@ -5633,6 +5633,10 @@ function off(el, type, handler, capture) {
 }
 
 function cancel(ev) {
+  // if metaKey (command/apple key on Mac) is pressed then don't cancel event
+  // this makes stuff like command+L to focus URL bar work
+  if (ev.metaKey) return
+  
   if (ev.preventDefault) ev.preventDefault();
   ev.returnValue = false;
   if (ev.stopPropagation) ev.stopPropagation();
