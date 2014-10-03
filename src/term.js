@@ -1437,10 +1437,10 @@ Terminal.prototype.write = function(data) {
             // this.realX = 0;
             this.y++;
             // No auto-scrolling
-            // if (this.y > this.scrollBottom) {
-            //   this.y--;
+            if (this.y > this.scrollBottom) {
+              this.y--;
             //   this.scroll();
-            // }
+            }
             break;
 
           // '\r'
