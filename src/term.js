@@ -1372,13 +1372,13 @@ Terminal.prototype.scroll = function() {
     this.lines.push(this.blankLine());
   }
 
-    if (this.scrollTop !== 0) {
-      if (this.ybase !== 0) {
-        this.ybase--;
-        this.ydisp = this.ybase;
-      }
-      this.lines.splice(this.ybase + this.scrollTop, 1);
+  if (this.scrollTop !== 0) {
+    if (this.ybase !== 0) {
+      this.ybase--;
+      this.ydisp = this.ybase;
     }
+    this.lines.splice(this.ybase + this.scrollTop, 1);
+  }
 
   // this.maxRange();
   this.updateRange(this.scrollTop);
