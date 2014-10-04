@@ -1411,7 +1411,6 @@ Terminal.prototype.write = function(data) {
   this.refreshEnd = this.y;
 
   if (this.ybase !== this.ydisp) {
-    console.log(this.ybase, this.ydisp)
     if (! this.dontScroll) {
       this.ydisp = this.ybase;
     }
