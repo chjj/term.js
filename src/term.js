@@ -1368,6 +1368,9 @@ Terminal.prototype.scroll = function() {
       // add our new line
       this.lines.splice(row, 0, this.blankLine());
     }
+  } else {
+    this.lines.push(this.blankLine());
+  }
 
     if (this.scrollTop !== 0) {
       if (this.ybase !== 0) {
@@ -1376,7 +1379,6 @@ Terminal.prototype.scroll = function() {
       }
       this.lines.splice(this.ybase + this.scrollTop, 1);
     }
-  }
 
   // this.maxRange();
   this.updateRange(this.scrollTop);
