@@ -1349,31 +1349,33 @@ Terminal.prototype.scroll = function() {
     this.lines = this.lines.slice(-(this.ybase + this.rows) + 1);
   }
 
-  this.ydisp = this.ybase;
+  if (!this.dontScroll) {
+    this.ydisp = this.ybase;
 
-  // last line
-  row = this.ybase + this.rows - 1;
+    // last line
+    row = this.ybase + this.rows - 1;
 
-  // subtract the bottom scroll region
-  row -= this.rows - 1 - this.scrollBottom;
+    // subtract the bottom scroll region
+    row -= this.rows - 1 - this.scrollBottom;
 
-  if (row === this.lines.length) {
-    // potential optimization:
-    // pushing is faster than splicing
-    // when they amount to the same
-    // behavior.
-    this.lines.push(this.blankLine());
-  } else {
-    // add our new line
-    this.lines.splice(row, 0, this.blankLine());
-  }
-
-  if (this.scrollTop !== 0) {
-    if (this.ybase !== 0) {
-      this.ybase--;
-      this.ydisp = this.ybase;
+    if (row === this.lines.length) {
+      // potential optimization:
+      // pushing is faster than splicing
+      // when they amount to the same
+      // behavior.
+      this.lines.push(this.blankLine());
+    } else {
+      // add our new line
+      this.lines.splice(row, 0, this.blankLine());
     }
-    this.lines.splice(this.ybase + this.scrollTop, 1);
+
+    if (this.scrollTop !== 0) {
+      if (this.ybase !== 0) {
+        this.ybase--;
+        this.ydisp = this.ybase;
+      }
+      this.lines.splice(this.ybase + this.scrollTop, 1);
+    }
   }
 
   // this.maxRange();
@@ -1388,6 +1390,11 @@ Terminal.prototype.scrollDisp = function(disp) {
     this.ydisp = this.ybase;
   } else if (this.ydisp < 0) {
     this.ydisp = 0;
+  }
+  if (this.ydisp === this.ybase) {
+    this.dontScroll = false;
+  } else {
+    this.dontScroll = true;
   }
 
   this.refresh(0, this.rows - 1);
@@ -1404,7 +1411,10 @@ Terminal.prototype.write = function(data) {
   this.refreshEnd = this.y;
 
   if (this.ybase !== this.ydisp) {
-    this.ydisp = this.ybase;
+    console.log(this.ybase, this.ydisp)
+    if (! this.dontScroll) {
+      this.ydisp = this.ybase;
+    }
     this.maxRange();
   }
 
@@ -1436,10 +1446,9 @@ Terminal.prototype.write = function(data) {
             // if (this.realX >= this.cols) break;
             // this.realX = 0;
             this.y++;
-            // No auto-scrolling
             if (this.y > this.scrollBottom) {
               this.y--;
-            //   this.scroll();
+              this.scroll();
             }
             break;
 
