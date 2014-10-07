@@ -1351,25 +1351,23 @@ Terminal.prototype.scroll = function() {
 
   if (!this.dontScroll) {
     this.ydisp = this.ybase;
+  }
 
-    // last line
-    row = this.ybase + this.rows - 1;
+  // last line
+  row = this.ybase + this.rows - 1;
 
-    // subtract the bottom scroll region
-    row -= this.rows - 1 - this.scrollBottom;
+  // subtract the bottom scroll region
+  row -= this.rows - 1 - this.scrollBottom;
 
-    if (row === this.lines.length) {
-      // potential optimization:
-      // pushing is faster than splicing
-      // when they amount to the same
-      // behavior.
-      this.lines.push(this.blankLine());
-    } else {
-      // add our new line
-      this.lines.splice(row, 0, this.blankLine());
-    }
-  } else {
+  if (row === this.lines.length) {
+    // potential optimization:
+    // pushing is faster than splicing
+    // when they amount to the same
+    // behavior.
     this.lines.push(this.blankLine());
+  } else {
+    // add our new line
+    this.lines.splice(row, 0, this.blankLine());
   }
 
   if (this.scrollTop !== 0) {
