@@ -392,6 +392,7 @@ Terminal.defaults = {
   visualBell: false,
   popOnBell: false,
   scrollback: 1000,
+  hideCursor: false,
   screenKeys: false,
   debug: false,
   useStyle: false
@@ -1311,12 +1312,15 @@ Terminal.prototype.refresh = function(start, end) {
 };
 
 Terminal.prototype._cursorBlink = function() {
-  if (Terminal.focus !== this) return;
+  if (Terminal.focus !== this || this.hideCursor) return;
   this.cursorState ^= 1;
   this.refresh(this.y, this.y);
 };
 
 Terminal.prototype.showCursor = function() {
+  if (this.hideCursor) {
+    return;
+  }
   if (!this.cursorState) {
     this.cursorState = 1;
     this.refresh(this.y, this.y);
@@ -1327,6 +1331,9 @@ Terminal.prototype.showCursor = function() {
 };
 
 Terminal.prototype.startBlink = function() {
+  if (this.hideCursor) {
+    return;
+  }
   if (!this.cursorBlink) return;
   var self = this;
   this._blinker = function() {
@@ -1336,7 +1343,7 @@ Terminal.prototype.startBlink = function() {
 };
 
 Terminal.prototype.refreshBlink = function() {
-  if (!this.cursorBlink) return;
+  if (!this.cursorBlink || this.hideCursor) return;
   clearInterval(this._blink);
   this._blink = setInterval(this._blinker, 500);
 };
