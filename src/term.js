@@ -1179,7 +1179,7 @@ Terminal.prototype.refresh = function(start, end) {
     end = this.lines.length - 1;
   }
 
-  for (; y <= end; y++) {
+  for (; y <= end && y + this.ydisp < this.lines.length; y++) {
     row = y + this.ydisp;
 
     line = this.lines[row];
@@ -2783,17 +2783,34 @@ Terminal.prototype.resize = function(x, y) {
   this.cols = x;
 
   // resize rows
-  j = this.rows;
   var difference = this.rows - y;
+  // Now that we know the amount we'll be moving the text,
+  if (difference > 0) {
+    // difference is positive, we're moving the text up
+
+    // we only need to remove lines and shrink the difference if there are blank lines at the
+    // bottom.
+    while (this.lines[this.lines.length - 1][0].length === 3 && difference > 0) {
+      difference--;
+      this.lines.pop();
+    }
+  }
   // So the ybase doesnt go negative, do this check here.
-  if (this.ybase > difference) {
+  if (this.ydisp + difference >= 0 && this.ydisp + difference <= this.lines.length) {
     this.ybase += difference;
     this.ydisp += difference;
   }
+  j = this.rows;
   // if we're increasing the amount of rows
   if (j < y) {
     el = this.element;
     while (j++ < y) {
+      if (this.lines.length < y + this.ybase) {
+        this.lines.push(this.blankLine());
+        // Since we're adding blank lines to the line count, we don't want to move the cursor with
+        // it
+        difference++;
+      }
       if (this.children.length < y) {
         line = this.document.createElement('div');
         el.appendChild(line);
@@ -2802,6 +2819,11 @@ Terminal.prototype.resize = function(x, y) {
     }
   } else if (j > y) {
     while (j-- > y) {
+      if (this.lines.length > y + this.ybase) {
+        if (this.lines[this.lines.length - 1][0].length === 3) {
+          this.lines.pop();
+        }
+      }
       if (this.children.length > y) {
         el = this.children.pop();
         if (!el) continue;
@@ -2810,6 +2832,10 @@ Terminal.prototype.resize = function(x, y) {
     }
   }
   this.rows = y;
+  // We don't need to adjust the cursor unless the window got bigger
+  if (difference < 0) {
+    this.y -= difference;
+  }
 
   // make sure the cursor stays on screen
   if (this.y >= y) this.y = y - 1;
@@ -2905,10 +2931,12 @@ Terminal.prototype.blankLine = function(cur) {
     ? this.eraseAttr()
     : this.defAttr;
 
-  var ch = [attr, ' ']
-    , line = []
-    , i = 0;
-
+  // Here's a new feature.  Blank lines will have a third value in their chars.  This should make it
+  // easy to identify them and erase them
+  var blankLineHeader = [attr, ' ', true]
+    , ch = [attr, ' ']
+    , line = [blankLineHeader]
+    , i = 1;
   for (; i < this.cols; i++) {
     line[i] = ch;
   }
