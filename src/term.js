@@ -2784,12 +2784,16 @@ Terminal.prototype.resize = function(x, y) {
 
   // resize rows
   j = this.rows;
+  var difference = this.rows - y;
+  // So the ybase doesnt go negative, do this check here.
+  if (this.ybase > difference) {
+    this.ybase += difference;
+    this.ydisp += difference;
+  }
+  // if we're increasing the amount of rows
   if (j < y) {
     el = this.element;
     while (j++ < y) {
-      if (this.lines.length < y + this.ybase) {
-        this.lines.push(this.blankLine());
-      }
       if (this.children.length < y) {
         line = this.document.createElement('div');
         el.appendChild(line);
@@ -2798,9 +2802,6 @@ Terminal.prototype.resize = function(x, y) {
     }
   } else if (j > y) {
     while (j-- > y) {
-      if (this.lines.length > y + this.ybase) {
-        this.lines.pop();
-      }
       if (this.children.length > y) {
         el = this.children.pop();
         if (!el) continue;
