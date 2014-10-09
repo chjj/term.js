@@ -1178,6 +1178,8 @@ Terminal.prototype.refresh = function(start, end) {
     this.log('`end` is too large. Most likely a bad CSR.');
     end = this.lines.length - 1;
   }
+//  console.log('REFRESH yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
+//    'end', end);
 
   for (; y <= end && y + this.ydisp < this.lines.length; y++) {
     row = y + this.ydisp;
@@ -1198,6 +1200,7 @@ Terminal.prototype.refresh = function(start, end) {
     i = 0;
 
     for (; i < width; i++) {
+      if (i > line.length) continue;
       data = line[i][0];
       ch = line[i][1];
 
@@ -2673,14 +2676,14 @@ Terminal.prototype.keyPress = function(ev) {
   }
   /*
     anandp:
-    for mac allow paste event propagation 
+    for mac allow paste event propagation
   */
   if (!((key === 118)
     && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
     cancel(ev);
   }
 
-  if (!key || ev.ctrlKey 
+  if (!key || ev.ctrlKey
     || (ev.altKey && (key != 118))
     || (ev.metaKey && (key != 118))) return false;
 
@@ -2795,11 +2798,14 @@ Terminal.prototype.resize = function(x, y) {
       this.lines.pop();
     }
   }
+//  console.log('before yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
+//    'thisY', this.y);
   // So the ybase doesnt go negative, do this check here.
   if (this.ydisp + difference >= 0 && this.ydisp + difference <= this.lines.length) {
     this.ybase += difference;
     this.ydisp += difference;
   }
+//  console.log('yDisp', this.ydisp, 'ybase', this.ybase, 'y', y, 'rows', this.rows);
   j = this.rows;
   // if we're increasing the amount of rows
   if (j < y) {
