@@ -187,12 +187,23 @@ function Terminal(options) {
     this.on('data', options.handler);
   }
 
+  /**
+   * ybase is the index of the line ROWS.count above the very last line.
+   * @type {number}
+   */
   this.ybase = 0;
+  /**
+   * ydisp is the index of the line at the top of the display.  Changing this values moves the
+   * display up and down.
+   * @type {number}
+   */
   this.ydisp = 0;
   this.x = 0;
   this.y = 0;
   this.cursorState = 0;
   this.cursorHidden = false;
+  this.cursorSpinner;
+  this.cursorSpinnerFrame = 0;
   this.convertEol;
   this.state = 0;
   this.queue = '';
@@ -389,6 +400,7 @@ Terminal.defaults = {
   termName: 'xterm',
   geometry: [80, 24],
   cursorBlink: true,
+  cursorSpinner: false,
   visualBell: false,
   popOnBell: false,
   scrollback: 1000,
@@ -437,7 +449,9 @@ Terminal.prototype.focus = function() {
 Terminal.prototype.blur = function() {
   if (Terminal.focus !== this) return;
 
-  this.cursorState = 0;
+  if (!this.cursorSpinner) {
+    this.cursorState = 0;
+  }
   this.refresh(this.y, this.y);
   if (this.sendFocus) this.send('\x1b[O');
 
@@ -1209,7 +1223,26 @@ Terminal.prototype.refresh = function(start, end) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor">';
+            if (this.cursorSpinner && !this.cursorHidden) {
+              var cursorSpinnerChar;
+              switch (this.cursorSpinnerFrame) {
+                case 0:
+                  cursorSpinnerChar = '|';
+                  break;
+                case 1:
+                  cursorSpinnerChar = '/';
+                  break;
+                case 2:
+                  cursorSpinnerChar = '-';
+                  break;
+                case 3:
+                  cursorSpinnerChar = '\\';
+                  break;
+              }
+              out += cursorSpinnerChar;
+            } else {
+              out += '<span class="reverse-video terminal-cursor">';
+            }
           } else {
             out += '<span style="';
 
@@ -1312,8 +1345,12 @@ Terminal.prototype.refresh = function(start, end) {
 };
 
 Terminal.prototype._cursorBlink = function() {
-  if (Terminal.focus !== this || this.hideCursor) return;
-  this.cursorState ^= 1;
+  if ((Terminal.focus !== this && !this.cursorSpinner) || this.hideCursor) return;
+  if (this.cursorSpinner) {
+    this.cursorSpinnerFrame = (this.cursorSpinnerFrame + 1) % 4;
+  } else {
+    this.cursorState ^= 1;
+  }
   this.refresh(this.y, this.y);
 };
 
@@ -1339,7 +1376,8 @@ Terminal.prototype.startBlink = function() {
   this._blinker = function() {
     self._cursorBlink();
   };
-  this._blink = setInterval(this._blinker, 500);
+  var blinkTimeout = (this.cursorSpinner) ? 100 : 500;
+  this._blink = setInterval(this._blinker, blinkTimeout);
 };
 
 Terminal.prototype.refreshBlink = function() {
@@ -2838,7 +2876,10 @@ Terminal.prototype.resize = function(x, y) {
   }
 
   // make sure the cursor stays on screen
-  if (this.y >= y) this.y = y - 1;
+  if (this.y >= y) {
+    this.lines.push(this.blankLine());
+    this.y = y - 1;
+  }
   if (this.x >= x) this.x = x - 1;
 
   this.scrollTop = 0;
