@@ -477,6 +477,8 @@ Terminal.prototype.initGlobal = function() {
   if (this.useStyle) {
     Terminal.insertStyle(document, this.colors[256], this.colors[257]);
   }
+
+  this.fixFirefoxPaste();
 };
 
 /**
@@ -539,6 +541,9 @@ Terminal.bindKeys = function(document) {
   // If we click somewhere other than a
   // terminal, unfocus the terminal.
   on(document, 'mousedown', function(ev) {
+
+    Terminal.disableDesignMode();
+
     if (!Terminal.focus) return;
 
     var el = ev.target || ev.srcElement;
@@ -596,6 +601,39 @@ Terminal.bindCopy = function(document) {
     }, 1);
   });
 };
+
+/**
+  * We set design mode because in firefox, this is the only way
+  * to get the paste event to fire because of this bug:
+  * https://bugzilla.mozilla.org/show_bug.cgi?id=846674
+  *
+  */
+Terminal.prototype.fixFirefoxPaste = function () {
+    var window = document.defaultView;
+
+    function disableDesignMode () {
+        if (Terminal.setDesignMode) {
+            document.designMode = Terminal.originalDesignMode;
+            Terminal.setDesignMode = false;
+        }
+    }
+
+    function enableDesignMode () {
+        Terminal.originalDesignMode = document.designMode;
+        Terminal.setDesignMode = true;
+        document.designMode = "on";
+    }
+
+    //When a right click menu is available, enable design mode so the paste event will fire.
+    on(document, 'contextmenu', enableDesignMode);
+
+    //Make sure we snap out of design mode after any action that would hide the context menu
+    //and actually allow the user to start modifying the document.
+    on(window, 'blur', disableDesignMode);
+    on(document, 'mousedown', disableDesignMode, true);
+    on(window, 'paste', disableDesignMode, true);
+};
+
 
 /**
  * Fix Mobile
