@@ -2838,49 +2838,52 @@ Terminal.prototype.resize = function(x, y) {
   this.setupStops(j);
   this.cols = x;
 
-  // resize rows
-  var difference = this.rows - y;
-  // Now that we know the amount we'll be moving the text,
-  if (difference > 0) {
-    // difference is positive, we're moving the text up
-
-    // we only need to remove lines and shrink the difference if there are blank lines at the
-    // bottom.
-    while (this.lines[this.lines.length - 1][0].length === 3 && difference > 0) {
-      difference--;
-      this.lines.pop();
-    }
-  }
-  //console.log('yDisp', this.ydisp, 'ybase', this.ybase);
-  var tempDifference = difference;
-  if (this.ydisp + difference < 0) {
-    tempDifference = -this.ydisp;
-  } else if (this.ydisp + difference > this.lines.length) {
-    tempDifference = this.lines.length - this.ydisp;
-  }
-  var includeSpaceForCursor = false;
-  if (this.ydisp + y + tempDifference >= this.lines.length) {
-    includeSpaceForCursor = true;
-    this.ybase += tempDifference;
-    this.ydisp += tempDifference;
-    var remainder = difference - tempDifference;
-    if (remainder < 0 && this.ybase) {
-      this.ybase = (this.ybase + remainder < 0) ? 0 : this.ybase + remainder;
-    }
-  }
-
-  console.log('yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
-    'difference', difference, 'thisY', this.y, 'tempD', tempDifference);
+  /**
+   * At the top: (ybase = x, ydisp = 0)
+   *  height increased:
+   *    subtract difference from ybase till = 0
+   *    use add remaining blank lines
+   *  decreased:
+   *    remove any blank lines (subtract count from diff)
+   *    add diff to ybase
+   *
+   * In Middle: (ybase = x, ydisp < x)
+   *  increase:
+   *    subtract diff from ybase until ybase=ydisp
+   *    subtract remainder from ybase and ydisp till = 0
+   *    add remaining blank lines
+   *  decrease:
+   *    add diff to ybase
+   *    remove any blank lines (subtract count from diff)
+   *
+   * Bottom: (ybase = ydisp)
+   *  increase:
+   *    subtract diff from ybase and ydisp till = 0
+   *    add remaining blank lines
+   *  decrease:
+   *    remove any blank lines (subtract count from diff)
+   *    add diff from ybase and ydisp
+   */
   j = this.rows;
+
+
   // if we're increasing the amount of rows
   if (j < y) {
     el = this.element;
     while (j++ < y) {
-      if (this.lines.length < y + this.ybase) {
+      //increasing
+      if (this.ybase > this.ydisp) {
+        //not at top, scrollable
+        this.ybase--;
+        this.y++;
+      } else if (this.ybase > 0 && this.ybase === this.ydisp) {
+        //not at top, not scrollable
+        this.ybase--;
+        this.ydisp--;
+        this.y++;
+      } else {
+        //add lines
         this.lines.push(this.blankLine());
-        // Since we're adding blank lines to the line count, we don't want to move the cursor with
-        // it
-        difference++;
       }
       if (this.children.length < y) {
         line = this.document.createElement('div');
@@ -2890,10 +2893,26 @@ Terminal.prototype.resize = function(x, y) {
     }
   } else if (j > y) {
     while (j-- > y) {
-      if (this.lines.length > y + this.ybase) {
-        if (this.lines[this.lines.length - 1][0].length === 3) {
+      //decreasing
+      if (this.ybase === this.ydisp) {
+        //at bottom
+        if (this.y >= y) {
+          // if the cursor is at the bottom, we need to scroll the window up
+          this.ydisp++;
+          this.ybase++;
+          this.y--;
+        } else {
+          // Otherwise, pop the lines off
+          //removing lines
           this.lines.pop();
         }
+      } else if (this.ydisp + y < this.lines.length && this.ydisp > 0) {
+        //in middle
+        this.ybase++;
+        this.y--;
+      } else {
+        //removing lines
+        this.lines.pop();
       }
       if (this.children.length > y) {
         el = this.children.pop();
@@ -2903,27 +2922,16 @@ Terminal.prototype.resize = function(x, y) {
     }
   }
   this.rows = y;
-  // We don't need to adjust the cursor unless the window got bigger
-  if (difference < 0) {
-    this.y -= difference;
-  }
 
   // make sure the cursor stays on screen
   if (this.y >= y) {
-    this.lines.push(this.blankLine());
     this.y = y - 1;
-    if (!this.hideCursor && includeSpaceForCursor) {
-      this.ybase++;
-      this.ydisp++;
-    }
   }
   if (this.x >= x) this.x = x - 1;
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
-  //console.log('rows', this.rows, 'scrollBottom', this.scrollBottom, 'rS', this.refreshStart, 'rE',
-  //  this.refreshEnd);
   this.refresh(0, this.rows - 1);
 
   // it's a real nightmare trying
