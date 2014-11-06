@@ -2864,9 +2864,6 @@ Terminal.prototype.resize = function(x, y) {
    *    remove any blank lines (subtract count from diff)
    *    add diff from ybase and ydisp
    */
-
-  //console.log('yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
-  //  'thisY', this.y, 'y', y);
   j = this.rows;
 
 
@@ -2874,18 +2871,18 @@ Terminal.prototype.resize = function(x, y) {
   if (j < y) {
     el = this.element;
     while (j++ < y) {
-      //console.log('increasing');
+      //increasing
       if (this.ybase > this.ydisp) {
-        //console.log('not at top, scrollable');
+        //not at top, scrollable
         this.ybase--;
         this.y++;
       } else if (this.ybase > 0 && this.ybase === this.ydisp) {
-        //console.log('not at top, not scrollable');
+        //not at top, not scrollable
         this.ybase--;
         this.ydisp--;
         this.y++;
       } else {
-        //console.log('add lines');
+        //add lines
         this.lines.push(this.blankLine());
       }
       if (this.children.length < y) {
@@ -2896,9 +2893,9 @@ Terminal.prototype.resize = function(x, y) {
     }
   } else if (j > y) {
     while (j-- > y) {
-      //console.log('decreasing');
+      //decreasing
       if (this.ybase === this.ydisp) {
-        //console.log('at bottom')
+        //at bottom
         if (this.y >= y) {
           // if the cursor is at the bottom, we need to scroll the window up
           this.ydisp++;
@@ -2906,15 +2903,15 @@ Terminal.prototype.resize = function(x, y) {
           this.y--;
         } else {
           // Otherwise, pop the lines off
-          //console.log('removing lines');
+          //removing lines
           this.lines.pop();
         }
       } else if (this.ydisp + y < this.lines.length && this.ydisp > 0) {
-        //console.log('in middle');
+        //in middle
         this.ybase++;
         this.y--;
       } else {
-        //console.log('removing lines');
+        //removing lines
         this.lines.pop();
       }
       if (this.children.length > y) {
@@ -2935,8 +2932,6 @@ Terminal.prototype.resize = function(x, y) {
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
-  //console.log('rows', this.rows, 'scrollBottom', this.scrollBottom, 'rS', this.refreshStart, 'rE',
-  //  this.refreshEnd);
   this.refresh(0, this.rows - 1);
 
   // it's a real nightmare trying
