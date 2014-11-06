@@ -133,6 +133,7 @@ var normal = 0
 function Terminal(options) {
   var self = this;
 
+  this.SPINNER = ['|', '/', '-', '\\'];
   if (!(this instanceof Terminal)) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
@@ -1192,8 +1193,8 @@ Terminal.prototype.refresh = function(start, end) {
     this.log('`end` is too large. Most likely a bad CSR.');
     end = this.lines.length - 1;
   }
-//  console.log('REFRESH yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
-//    'end', end);
+  //console.log('REFRESH yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
+  //  'end', end);
 
   for (; y <= end && y + this.ydisp < this.lines.length; y++) {
     row = y + this.ydisp;
@@ -1227,22 +1228,7 @@ Terminal.prototype.refresh = function(start, end) {
         if (data !== this.defAttr) {
           if (data === -1) {
             if (this.cursorSpinner && !this.cursorHidden) {
-              var cursorSpinnerChar;
-              switch (this.cursorSpinnerFrame) {
-                case 0:
-                  cursorSpinnerChar = '|';
-                  break;
-                case 1:
-                  cursorSpinnerChar = '/';
-                  break;
-                case 2:
-                  cursorSpinnerChar = '-';
-                  break;
-                case 3:
-                  cursorSpinnerChar = '\\';
-                  break;
-              }
-              out += cursorSpinnerChar;
+              out += this.SPINNER[this.cursorSpinnerFrame];
             } else {
               out += '<span class="reverse-video terminal-cursor">';
             }
@@ -2714,14 +2700,14 @@ Terminal.prototype.keyPress = function(ev) {
   }
   /*
     anandp:
-    for mac allow paste event propagation
+    for mac allow paste event propagation 
   */
   if (!((key === 118)
     && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
     cancel(ev);
   }
 
-  if (!key || ev.ctrlKey
+  if (!key || ev.ctrlKey 
     || (ev.altKey && (key != 118))
     || (ev.metaKey && (key != 118))) return false;
 
@@ -2792,6 +2778,35 @@ Terminal.prototype.error = function() {
   this.context.console.error.apply(this.context.console, args);
 };
 
+  /**
+   * things to cover:
+   *
+   * if ybase === ydisp (at the bottom), then the terminal should follow the bottom
+   * otherwise, keep ydisp the same
+   *
+   * Shrinking window:
+   * - if ybase === ydisp
+   *  clear blank lines
+   *  add remaining difference to ybase and ydisp
+   * - else
+   *  just shrink window
+   *
+   * enlarging window:
+   * - if  ybase > ydisp (somewhere above the bottom)
+   *   - if ybase <= ydisp + difference (if the bottom will be visible after enlarging)
+   *     difference = ybase - ydisp
+   *     ybase = ydisp
+   * - if ybase === ydisp (if the bottom is visible)
+   *   subtract difference from ybase, ydisp (pull the top down)
+   *   - if ybase < difference (if everything is now displayed)
+   *    ybase = 0, add remaining difference as blank lines
+   *
+   *
+   *
+   * reveal bottom before revealing top
+   * @param x
+   * @param y
+   */
 Terminal.prototype.resize = function(x, y) {
   var line
     , el
@@ -2836,14 +2851,26 @@ Terminal.prototype.resize = function(x, y) {
       this.lines.pop();
     }
   }
-//  console.log('before yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
-//    'thisY', this.y);
-  // So the ybase doesnt go negative, do this check here.
-  if (this.ydisp + difference >= 0 && this.ydisp + difference <= this.lines.length) {
-    this.ybase += difference;
-    this.ydisp += difference;
+  //console.log('yDisp', this.ydisp, 'ybase', this.ybase);
+  var tempDifference = difference;
+  if (this.ydisp + difference < 0) {
+    tempDifference = -this.ydisp;
+  } else if (this.ydisp + difference > this.lines.length) {
+    tempDifference = this.lines.length - this.ydisp;
   }
-//  console.log('yDisp', this.ydisp, 'ybase', this.ybase, 'y', y, 'rows', this.rows);
+  var includeSpaceForCursor = false;
+  if (this.ydisp + y + tempDifference >= this.lines.length) {
+    includeSpaceForCursor = true;
+    this.ybase += tempDifference;
+    this.ydisp += tempDifference;
+    var remainder = difference - tempDifference;
+    if (remainder < 0 && this.ybase) {
+      this.ybase = (this.ybase + remainder < 0) ? 0 : this.ybase + remainder;
+    }
+  }
+
+  console.log('yDisp', this.ydisp, 'ybase', this.ybase, 'lines', this.lines.length,
+    'difference', difference, 'thisY', this.y, 'tempD', tempDifference);
   j = this.rows;
   // if we're increasing the amount of rows
   if (j < y) {
@@ -2885,12 +2912,18 @@ Terminal.prototype.resize = function(x, y) {
   if (this.y >= y) {
     this.lines.push(this.blankLine());
     this.y = y - 1;
+    if (!this.hideCursor && includeSpaceForCursor) {
+      this.ybase++;
+      this.ydisp++;
+    }
   }
   if (this.x >= x) this.x = x - 1;
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
+  //console.log('rows', this.rows, 'scrollBottom', this.scrollBottom, 'rS', this.refreshStart, 'rE',
+  //  this.refreshEnd);
   this.refresh(0, this.rows - 1);
 
   // it's a real nightmare trying
