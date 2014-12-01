@@ -1219,7 +1219,7 @@ Terminal.prototype.refresh = function(start, end) {
             // bold
             if (flags & 1) {
               if (!Terminal.brokenBold) {
-                out += 'font-weight:bold;';
+                out += 'font-weight:400;';
               }
               // See: XTerm*boldColors
               if (fg < 8) fg += 8;
