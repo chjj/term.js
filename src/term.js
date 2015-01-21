@@ -1136,7 +1136,7 @@ Terminal.prototype.bindMouse = function() {
     scrollRate = Math.abs(scrollRate);
 
     if (scrollRate <= 10) {
-      return jumpFuncDebounce(ev, jumpLines);
+      return jumpFuncDebounced(ev, jumpLines);
     } else if (scrollRate <= 30) {
       jumpLines = 2;
     } else if (scrollRate <= 90) {
