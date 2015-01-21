@@ -52,6 +52,7 @@
 var window = this
   , document = this.document;
 
+var debounce = require('debounce');
 /**
  * EventEmitter
  */
@@ -1126,13 +1127,38 @@ Terminal.prototype.bindMouse = function() {
   on(el, wheelEvent, function(ev) {
     if (self.mouseEvents) return;
     if (self.applicationKeypad) return;
-    if (ev.type === 'DOMMouseScroll') {
-      self.scrollDisp(ev.detail < 0 ? -5 : 5);
+
+    var jumpLines = 1;
+    //equalize event object
+    //http://www.javascriptkit.com/javatutors/onmousewheel.shtml
+    var evt = window.event || ev;
+    var scrollRate = evt.detail ? evt.detail*(-120) : evt.wheelDelta;
+    scrollRate = Math.abs(scrollRate);
+
+    if (scrollRate <= 10) {
+      return jumpFuncDebounce(ev, jumpLines);
+    } else if (scrollRate <= 30) {
+      jumpLines = 2;
+    } else if (scrollRate <= 90) {
+      jumpLines = 3;
+    } else if (scrollRate <= 140) {
+      jumpLines = 4;
     } else {
-      self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
+      jumpLines = 5;
     }
+    jumpFunc(ev, jumpLines);
     return cancel(ev);
   });
+
+  var jumpFunc = function (ev, defaultJump) {
+   if (ev.type === 'DOMMouseScroll') {
+      self.scrollDisp(ev.detail < 0 ? -(defaultJump) : defaultJump);
+    } else {
+      self.scrollDisp(ev.wheelDeltaY > 0 ? -(defaultJump) : defaultJump);
+    }
+  };
+  // 33ms arrived at after informal human testing
+  var jumpFuncDebounced = debounce(jumpFunc, 33, true);
 };
 
 /**
