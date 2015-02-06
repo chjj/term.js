@@ -505,7 +505,7 @@ Terminal.bindPaste = function(document) {
  * Global Events for key handling
  */
 
-Terminal.bindKeys = function(document) {
+Terminal.prototype.bindKeys = function(document) {
   // We should only need to check `target === body` below,
   // but we can check everything for good measure.
   on(document, 'keydown', function(ev) {
