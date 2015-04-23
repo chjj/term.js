@@ -732,75 +732,83 @@ Terminal.prototype.open = function(parent) {
   // Draw the screen.
   this.refresh(0, this.rows - 1);
 
-  // Initialize global actions that
-  // need to be taken on the document.
-  this.initGlobal();
+  if (!('useEvents' in this.options) || this.options.useEvents) {
+    // Initialize global actions that
+    // need to be taken on the document.
+    this.initGlobal();
+  }
 
-  // Ensure there is a Terminal.focus.
-  this.focus();
+  if (!('useFocus' in this.options) || this.options.useFocus) {
+    // Ensure there is a Terminal.focus.
+    this.focus();
 
-  // Start blinking the cursor.
-  this.startBlink();
+    // Start blinking the cursor.
+    this.startBlink();
 
-  // Bind to DOM events related
-  // to focus and paste behavior.
-  on(this.element, 'focus', function() {
-    self.focus();
-    if (self.isMobile) {
-      Terminal._textarea.focus();
-    }
-  });
+    // Bind to DOM events related
+    // to focus and paste behavior.
+    on(this.element, 'focus', function() {
+      self.focus();
+      if (self.isMobile) {
+        Terminal._textarea.focus();
+      }
+    });
 
-  // This causes slightly funky behavior.
-  // on(this.element, 'blur', function() {
-  //   self.blur();
-  // });
+    // This causes slightly funky behavior.
+    // on(this.element, 'blur', function() {
+    //   self.blur();
+    // });
 
-  on(this.element, 'mousedown', function() {
-    self.focus();
-  });
+    on(this.element, 'mousedown', function() {
+      self.focus();
+    });
 
-  // Clickable paste workaround, using contentEditable.
-  // This probably shouldn't work,
-  // ... but it does. Firefox's paste
-  // event seems to only work for textareas?
-  on(this.element, 'mousedown', function(ev) {
-    var button = ev.button != null
-      ? +ev.button
-      : ev.which != null
-        ? ev.which - 1
-        : null;
+    // Clickable paste workaround, using contentEditable.
+    // This probably shouldn't work,
+    // ... but it does. Firefox's paste
+    // event seems to only work for textareas?
+    on(this.element, 'mousedown', function(ev) {
+      var button = ev.button != null
+        ? +ev.button
+        : ev.which != null
+          ? ev.which - 1
+          : null;
 
-    // Does IE9 do this?
-    if (self.isMSIE) {
-      button = button === 1 ? 0 : button === 4 ? 1 : button;
-    }
+      // Does IE9 do this?
+      if (self.isMSIE) {
+        button = button === 1 ? 0 : button === 4 ? 1 : button;
+      }
 
-    if (button !== 2) return;
+      if (button !== 2) return;
 
-    self.element.contentEditable = 'true';
-    setTimeout(function() {
-      self.element.contentEditable = 'inherit'; // 'false';
-    }, 1);
-  }, true);
+      self.element.contentEditable = 'true';
+      setTimeout(function() {
+        self.element.contentEditable = 'inherit'; // 'false';
+      }, 1);
+    }, true);
+  }
 
-  // Listen for mouse events and translate
-  // them into terminal mouse protocols.
-  this.bindMouse();
+  if (!('useMouse' in this.options) || this.options.useMouse) {
+    // Listen for mouse events and translate
+    // them into terminal mouse protocols.
+    this.bindMouse();
+  }
+
+  // this.emit('open');
+
+  if (!('useFocus' in this.options) || this.options.useFocus) {
+      // This can be useful for pasting,
+      // as well as the iPad fix.
+      setTimeout(function() {
+        self.element.focus();
+      }, 100);
+  }
 
   // Figure out whether boldness affects
   // the character width of monospace fonts.
   if (Terminal.brokenBold == null) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
-
-  // this.emit('open');
-
-  // This can be useful for pasting,
-  // as well as the iPad fix.
-  setTimeout(function() {
-    self.element.focus();
-  }, 100);
 };
 
 // XTerm mouse events
