@@ -732,13 +732,13 @@ Terminal.prototype.open = function(parent) {
   // Draw the screen.
   this.refresh(0, this.rows - 1);
 
-  if (this.options.noEvents) {
+  if (!('useEvents' in this.options) || this.options.useEvents) {
     // Initialize global actions that
     // need to be taken on the document.
     this.initGlobal();
   }
 
-  if (!this.options.noFocus) {
+  if (!('useFocus' in this.options) || this.options.useFocus) {
     // Ensure there is a Terminal.focus.
     this.focus();
 
@@ -788,7 +788,7 @@ Terminal.prototype.open = function(parent) {
     }, true);
   }
 
-  if (this.options.noMouse) {
+  if (!('useMouse' in this.options) || this.options.useMouse) {
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
@@ -796,7 +796,7 @@ Terminal.prototype.open = function(parent) {
 
   // this.emit('open');
 
-  if (!this.options.noFocus) {
+  if (!('useFocus' in this.options) || this.options.useFocus) {
       // This can be useful for pasting,
       // as well as the iPad fix.
       setTimeout(function() {
