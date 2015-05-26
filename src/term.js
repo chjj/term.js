@@ -709,6 +709,7 @@ Terminal.prototype.open = function(parent) {
     this.isAndroid = !!~this.context.navigator.userAgent.indexOf('Android');
     this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
+    this.isMSIE = this.isMSIE || !!~this.context.navigator.userAgent.indexOf('Trident');
   }
 
   // Create our main terminal element.
@@ -1015,9 +1016,15 @@ Terminal.prototype.bindMouse = function() {
           : 65;
         break;
       case 'mousewheel':
-        button = ev.wheelDeltaY > 0
-          ? 64
-          : 65;
+          if (self.isMSIE) {
+              button = ev.wheelDelta > 0
+                    ? 64
+                    : 65;
+          } else {
+              button = ev.wheelDeltaY > 0
+                ? 64
+                : 65;
+          }
         break;
     }
 
@@ -1143,7 +1150,11 @@ Terminal.prototype.bindMouse = function() {
     if (ev.type === 'DOMMouseScroll') {
       self.scrollDisp(ev.detail < 0 ? -5 : 5);
     } else {
-      self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
+        if (self.isMSIE) {
+            self.scrollDisp(ev.wheelDelta > 0 ? -5 : 5);
+        } else {
+            self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
+        }
     }
     return cancel(ev);
   });
@@ -1338,6 +1349,7 @@ Terminal.prototype.refresh = function(start, end) {
   }
 
   if (parent) parent.appendChild(this.element);
+  if (this.focus) self.focus();
 };
 
 Terminal.prototype._cursorBlink = function() {
