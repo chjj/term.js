@@ -1005,10 +1005,9 @@ Terminal.prototype.bindMouse = function() {
                   }
                   return;
               } else {
-                  //TODO: save the origin status of the rows now, and then when we need to 
-                  self._selected = { x1: self.copyStartPos.x, x2: copyEndPos.x, y1: self.copyStartPos.y, y2: copyEndPos.y };
-                  var text = self.grabText(self._selected.x1, self._selected.x2, self._selected.y1 + self.ydisp, self._selected.y2 + self.ydisp);
-                  self.selectText(self._selected.x1, self._selected.x2, self._selected.y1 + self.ydisp, self._selected.y2 + self.ydisp);
+                  self._selected = { x1: self.copyStartPos.x, x2: copyEndPos.x, y1: self.copyStartPos.y + self.ydisp, y2: copyEndPos.y + self.ydisp };
+                  var text = self.grabText(self._selected.x1, self._selected.x2, self._selected.y1 , self._selected.y2 );
+                  self.selectText(self._selected.x1, self._selected.x2, self._selected.y1 , self._selected.y2 );
                   self.copyText(text);
                   try {
                       var copyResult = document.execCommand('copy');
