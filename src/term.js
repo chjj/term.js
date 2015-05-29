@@ -461,8 +461,6 @@ Terminal.prototype.initGlobal = function() {
   }
   Terminal._boundDocs.push(document);
 
-  this.bindKeys();
-
   if (this.isMobile) {
     this.fixMobile(document);
   }
@@ -653,6 +651,8 @@ Terminal.prototype.open = function(parent) {
     // need to be taken on the document.
     this.initGlobal();
   }
+
+  this.bindKeys();
 
   if (!('useFocus' in this.options) || this.options.useFocus) {
     // Ensure there is a Terminal.focus.
