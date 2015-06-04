@@ -1225,13 +1225,13 @@ Terminal.prototype.refresh = function(start, end) {
 
     attr = this.defAttr;
     i = 0;
-
-    for (; i < width; i++) {
+    var widthd = width;
+    for (; i < widthd; i++) {
       data = line[i][0];
       ch = line[i][1];
 
       if (i === x) data = -1;
-
+      if (ch.charCodeAt()>=127){widthd=widthd-0.7}
       if (data !== attr) {
         if (attr !== this.defAttr) {
           out += '</span>';
@@ -1439,7 +1439,7 @@ Terminal.prototype.write = function(data) {
   }
 
   // this.log(JSON.stringify(data.replace(/\x1b/g, '^[')));
-
+  this.colss = this.cols;
   for (; i < l; i++) {
     ch = data[i];
     switch (this.state) {
@@ -1510,10 +1510,11 @@ Terminal.prototype.write = function(data) {
               if (this.charset && this.charset[ch]) {
                 ch = this.charset[ch];
               }
-
-              if (this.x >= this.cols) {
+              if (ch.charCodeAt()>=127){this.colss=this.colss-0.7}
+              if (this.x >= this.colss) {
                 this.x = 0;
                 this.y++;
+                this.colss=this.cols;
                 if (this.y > this.scrollBottom) {
                   this.y--;
                   this.scroll();
@@ -1526,7 +1527,7 @@ Terminal.prototype.write = function(data) {
 
               if (isWide(ch)) {
                 j = this.y + this.ybase;
-                if (this.cols < 2 || this.x >= this.cols) {
+                if (this.colss < 2 || this.x >= this.colss) {
                   this.lines[j][this.x - 1] = [this.curAttr, ' '];
                   break;
                 }
