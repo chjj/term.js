@@ -464,11 +464,11 @@ Terminal.prototype.initGlobal = function() {
   }
   Terminal._boundDocs.push(document);
 
-  Terminal.bindPaste(document);
+  //Terminal.bindPaste(document);
 
-  Terminal.bindKeys(document);
+  //Terminal.bindKeys(document);
 
-  Terminal.bindCopy(document);
+  //Terminal.bindCopy(document);
 
   if (this.isMobile) {
     this.fixMobile(document);
@@ -483,119 +483,119 @@ Terminal.prototype.initGlobal = function() {
  * Bind to paste event
  */
 
-Terminal.bindPaste = function(document) {
-  // This seems to work well for ctrl-V and middle-click,
-  // even without the contentEditable workaround.
-  var window = document.defaultView;
-  on(window, 'paste', function(ev) {
-    var term = Terminal.focus;
-    if (!term) return;
-    if (ev.clipboardData) {
-      term.send(ev.clipboardData.getData('text/plain'));
-    } else if (term.context.clipboardData) {
-      term.send(term.context.clipboardData.getData('Text'));
-    }
-    // Not necessary. Do it anyway for good measure.
-    term.element.contentEditable = 'inherit';
-    return cancel(ev);
-  });
-};
+//Terminal.bindPaste = function(document) {
+//  // This seems to work well for ctrl-V and middle-click,
+//  // even without the contentEditable workaround.
+//  var window = document.defaultView;
+//  on(window, 'paste', function(ev) {
+//    var term = Terminal.focus;
+//    if (!term) return;
+//    if (ev.clipboardData) {
+//      term.send(ev.clipboardData.getData('text/plain'));
+//    } else if (term.context.clipboardData) {
+//      term.send(term.context.clipboardData.getData('Text'));
+//    }
+//    // Not necessary. Do it anyway for good measure.
+//    term.element.contentEditable = 'inherit';
+//    return cancel(ev);
+//  });
+//};
 
 /**
  * Global Events for key handling
  */
 
-Terminal.bindKeys = function(document) {
-  // We should only need to check `target === body` below,
-  // but we can check everything for good measure.
-  on(document, 'keydown', function(ev) {
-    if (!Terminal.focus) return;
-    var target = ev.target || ev.srcElement;
-    if (!target) return;
-    if (target === Terminal.focus.element
-        || target === Terminal.focus.context
-        || target === Terminal.focus.document
-        || target === Terminal.focus.body
-        || target === Terminal._textarea
-        || target === Terminal.focus.parent) {
-      return Terminal.focus.keyDown(ev);
-    }
-  }, true);
-
-  on(document, 'keypress', function(ev) {
-    if (!Terminal.focus) return;
-    var target = ev.target || ev.srcElement;
-    if (!target) return;
-    if (target === Terminal.focus.element
-        || target === Terminal.focus.context
-        || target === Terminal.focus.document
-        || target === Terminal.focus.body
-        || target === Terminal._textarea
-        || target === Terminal.focus.parent) {
-      return Terminal.focus.keyPress(ev);
-    }
-  }, true);
-
-  // If we click somewhere other than a
-  // terminal, unfocus the terminal.
-  on(document, 'mousedown', function(ev) {
-    if (!Terminal.focus) return;
-
-    var el = ev.target || ev.srcElement;
-    if (!el) return;
-
-    do {
-      if (el === Terminal.focus.element) return;
-    } while (el = el.parentNode);
-
-    Terminal.focus.blur();
-  });
-};
+//Terminal.bindKeys = function(document) {
+//  // We should only need to check `target === body` below,
+//  // but we can check everything for good measure.
+//  on(document, 'keydown', function(ev) {
+//    if (!Terminal.focus) return;
+//    var target = ev.target || ev.srcElement;
+//    if (!target) return;
+//    if (target === Terminal.focus.element
+//        || target === Terminal.focus.context
+//        || target === Terminal.focus.document
+//        || target === Terminal.focus.body
+//        || target === Terminal._textarea
+//        || target === Terminal.focus.parent) {
+//      return Terminal.focus.keyDown(ev);
+//    }
+//  }, true);
+//
+//  on(document, 'keypress', function(ev) {
+//    if (!Terminal.focus) return;
+//    var target = ev.target || ev.srcElement;
+//    if (!target) return;
+//    if (target === Terminal.focus.element
+//        || target === Terminal.focus.context
+//        || target === Terminal.focus.document
+//        || target === Terminal.focus.body
+//        || target === Terminal._textarea
+//        || target === Terminal.focus.parent) {
+//      return Terminal.focus.keyPress(ev);
+//    }
+//  }, true);
+//
+//  // If we click somewhere other than a
+//  // terminal, unfocus the terminal.
+//  on(document, 'mousedown', function(ev) {
+//    if (!Terminal.focus) return;
+//
+//    var el = ev.target || ev.srcElement;
+//    if (!el) return;
+//
+//    do {
+//      if (el === Terminal.focus.element) return;
+//    } while (el = el.parentNode);
+//
+//    Terminal.focus.blur();
+//  });
+//};
 
 /**
  * Copy Selection w/ Ctrl-C (Select Mode)
  */
 
-Terminal.bindCopy = function(document) {
-  var window = document.defaultView;
-
-  // if (!('onbeforecopy' in document)) {
-  //   // Copies to *only* the clipboard.
-  //   on(window, 'copy', function fn(ev) {
-  //     var term = Terminal.focus;
-  //     if (!term) return;
-  //     if (!term._selected) return;
-  //     var text = term.grabText(
-  //       term._selected.x1, term._selected.x2,
-  //       term._selected.y1, term._selected.y2);
-  //     term.emit('copy', text);
-  //     ev.clipboardData.setData('text/plain', text);
-  //   });
-  //   return;
-  // }
-
-  // Copies to primary selection *and* clipboard.
-  // NOTE: This may work better on capture phase,
-  // or using the `beforecopy` event.
-  on(window, 'copy', function(ev) {
-    var term = Terminal.focus;
-    if (!term) return;
-    if (!term._selected) return;
-    var textarea = term.getCopyTextarea();
-    var text = term.grabText(
-      term._selected.x1, term._selected.x2,
-      term._selected.y1, term._selected.y2);
-    term.emit('copy', text);
-    textarea.focus();
-    textarea.textContent = text;
-    textarea.value = text;
-    textarea.setSelectionRange(0, text.length);
-    setTimeout(function() {
-      term.element.focus();
-      term.focus();
-    }, 1);
-  });
-};
+//Terminal.bindCopy = function(document) {
+//  var window = document.defaultView;
+//
+//  // if (!('onbeforecopy' in document)) {
+//  //   // Copies to *only* the clipboard.
+//  //   on(window, 'copy', function fn(ev) {
+//  //     var term = Terminal.focus;
+//  //     if (!term) return;
+//  //     if (!term._selected) return;
+//  //     var text = term.grabText(
+//  //       term._selected.x1, term._selected.x2,
+//  //       term._selected.y1, term._selected.y2);
+//  //     term.emit('copy', text);
+//  //     ev.clipboardData.setData('text/plain', text);
+//  //   });
+//  //   return;
+//  // }
+//
+//  // Copies to primary selection *and* clipboard.
+//  // NOTE: This may work better on capture phase,
+//  // or using the `beforecopy` event.
+//  on(window, 'copy', function(ev) {
+//    var term = Terminal.focus;
+//    if (!term) return;
+//    if (!term._selected) return;
+//    var textarea = term.getCopyTextarea();
+//    var text = term.grabText(
+//      term._selected.x1, term._selected.x2,
+//      term._selected.y1, term._selected.y2);
+//    term.emit('copy', text);
+//    textarea.focus();
+//    textarea.textContent = text;
+//    textarea.value = text;
+//    textarea.setSelectionRange(0, text.length);
+//    setTimeout(function() {
+//      term.element.focus();
+//      term.focus();
+//    }, 1);
+//  });
+//};
 
 /**
  * Fix Mobile
@@ -2417,242 +2417,242 @@ Terminal.prototype.writeln = function(data) {
 
 // Key Resources:
 // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
-Terminal.prototype.keyDown = function(ev) {
-  var self = this
-    , key;
-
-  switch (ev.keyCode) {
-    // backspace
-    case 8:
-      if (ev.shiftKey) {
-        key = '\x08'; // ^H
-        break;
-      }
-      key = '\x7f'; // ^?
-      break;
-    // tab
-    case 9:
-      if (ev.shiftKey) {
-        key = '\x1b[Z';
-        break;
-      }
-      key = '\t';
-      break;
-    // return/enter
-    case 13:
-      key = '\r';
-      break;
-    // escape
-    case 27:
-      key = '\x1b';
-      break;
-    // left-arrow
-    case 37:
-      if (this.applicationCursor) {
-        key = '\x1bOD'; // SS3 as ^[O for 7-bit
-        //key = '\x8fD'; // SS3 as 0x8f for 8-bit
-        break;
-      }
-      key = '\x1b[D';
-      break;
-    // right-arrow
-    case 39:
-      if (this.applicationCursor) {
-        key = '\x1bOC';
-        break;
-      }
-      key = '\x1b[C';
-      break;
-    // up-arrow
-    case 38:
-      if (this.applicationCursor) {
-        key = '\x1bOA';
-        break;
-      }
-      if (ev.ctrlKey) {
-        this.scrollDisp(-1);
-        return cancel(ev);
-      } else {
-        key = '\x1b[A';
-      }
-      break;
-    // down-arrow
-    case 40:
-      if (this.applicationCursor) {
-        key = '\x1bOB';
-        break;
-      }
-      if (ev.ctrlKey) {
-        this.scrollDisp(1);
-        return cancel(ev);
-      } else {
-        key = '\x1b[B';
-      }
-      break;
-    // delete
-    case 46:
-      key = '\x1b[3~';
-      break;
-    // insert
-    case 45:
-      key = '\x1b[2~';
-      break;
-    // home
-    case 36:
-      if (this.applicationKeypad) {
-        key = '\x1bOH';
-        break;
-      }
-      key = '\x1bOH';
-      break;
-    // end
-    case 35:
-      if (this.applicationKeypad) {
-        key = '\x1bOF';
-        break;
-      }
-      key = '\x1bOF';
-      break;
-    // page up
-    case 33:
-      if (ev.shiftKey) {
-        this.scrollDisp(-(this.rows - 1));
-        return cancel(ev);
-      } else {
-        key = '\x1b[5~';
-      }
-      break;
-    // page down
-    case 34:
-      if (ev.shiftKey) {
-        this.scrollDisp(this.rows - 1);
-        return cancel(ev);
-      } else {
-        key = '\x1b[6~';
-      }
-      break;
-    // F1
-    case 112:
-      key = '\x1bOP';
-      break;
-    // F2
-    case 113:
-      key = '\x1bOQ';
-      break;
-    // F3
-    case 114:
-      key = '\x1bOR';
-      break;
-    // F4
-    case 115:
-      key = '\x1bOS';
-      break;
-    // F5
-    case 116:
-      key = '\x1b[15~';
-      break;
-    // F6
-    case 117:
-      key = '\x1b[17~';
-      break;
-    // F7
-    case 118:
-      key = '\x1b[18~';
-      break;
-    // F8
-    case 119:
-      key = '\x1b[19~';
-      break;
-    // F9
-    case 120:
-      key = '\x1b[20~';
-      break;
-    // F10
-    case 121:
-      key = '\x1b[21~';
-      break;
-    // F11
-    case 122:
-      key = '\x1b[23~';
-      break;
-    // F12
-    case 123:
-      key = '\x1b[24~';
-      break;
-    default:
-      // a-z and space
-      if (ev.ctrlKey) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          // Ctrl-A
-          if (this.screenKeys) {
-            if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
-              this.enterPrefix();
-              return cancel(ev);
-            }
-          }
-          // Ctrl-V
-          if (this.prefixMode && ev.keyCode === 86) {
-            this.leavePrefix();
-            return;
-          }
-          // Ctrl-C
-          if ((this.prefixMode || this.selectMode) && ev.keyCode === 67) {
-            if (this.visualMode) {
-              setTimeout(function() {
-                self.leaveVisual();
-              }, 1);
-            }
-            return;
-          }
-          key = String.fromCharCode(ev.keyCode - 64);
-        } else if (ev.keyCode === 32) {
-          // NUL
-          key = String.fromCharCode(0);
-        } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
-          // escape, file sep, group sep, record sep, unit sep
-          key = String.fromCharCode(ev.keyCode - 51 + 27);
-        } else if (ev.keyCode === 56) {
-          // delete
-          key = String.fromCharCode(127);
-        } else if (ev.keyCode === 219) {
-          // ^[ - escape
-          key = String.fromCharCode(27);
-        } else if (ev.keyCode === 221) {
-          // ^] - group sep
-          key = String.fromCharCode(29);
-        }
-      } else if ((!this.isMac && ev.altKey) || (this.isMac && ev.metaKey)) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
-        } else if (ev.keyCode === 192) {
-          key = '\x1b`';
-        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-          key = '\x1b' + (ev.keyCode - 48);
-        }
-      }
-      break;
-  }
-
-  if (!key) return true;
-
-  if (this.prefixMode) {
-    this.leavePrefix();
-    return cancel(ev);
-  }
-
-  if (this.selectMode) {
-    this.keySelect(ev, key);
-    return cancel(ev);
-  }
-
-  this.emit('keydown', ev);
-  this.emit('key', key, ev);
-
-  this.showCursor();
-  this.handler(key);
-
-  return cancel(ev);
-};
+//Terminal.prototype.keyDown = function(ev) {
+//  var self = this
+//    , key;
+//
+//  switch (ev.keyCode) {
+//    // backspace
+//    case 8:
+//      if (ev.shiftKey) {
+//        key = '\x08'; // ^H
+//        break;
+//      }
+//      key = '\x7f'; // ^?
+//      break;
+//    // tab
+//    case 9:
+//      if (ev.shiftKey) {
+//        key = '\x1b[Z';
+//        break;
+//      }
+//      key = '\t';
+//      break;
+//    // return/enter
+//    case 13:
+//      key = '\r';
+//      break;
+//    // escape
+//    case 27:
+//      key = '\x1b';
+//      break;
+//    // left-arrow
+//    case 37:
+//      if (this.applicationCursor) {
+//        key = '\x1bOD'; // SS3 as ^[O for 7-bit
+//        //key = '\x8fD'; // SS3 as 0x8f for 8-bit
+//        break;
+//      }
+//      key = '\x1b[D';
+//      break;
+//    // right-arrow
+//    case 39:
+//      if (this.applicationCursor) {
+//        key = '\x1bOC';
+//        break;
+//      }
+//      key = '\x1b[C';
+//      break;
+//    // up-arrow
+//    case 38:
+//      if (this.applicationCursor) {
+//        key = '\x1bOA';
+//        break;
+//      }
+//      if (ev.ctrlKey) {
+//        this.scrollDisp(-1);
+//        return cancel(ev);
+//      } else {
+//        key = '\x1b[A';
+//      }
+//      break;
+//    // down-arrow
+//    case 40:
+//      if (this.applicationCursor) {
+//        key = '\x1bOB';
+//        break;
+//      }
+//      if (ev.ctrlKey) {
+//        this.scrollDisp(1);
+//        return cancel(ev);
+//      } else {
+//        key = '\x1b[B';
+//      }
+//      break;
+//    // delete
+//    case 46:
+//      key = '\x1b[3~';
+//      break;
+//    // insert
+//    case 45:
+//      key = '\x1b[2~';
+//      break;
+//    // home
+//    case 36:
+//      if (this.applicationKeypad) {
+//        key = '\x1bOH';
+//        break;
+//      }
+//      key = '\x1bOH';
+//      break;
+//    // end
+//    case 35:
+//      if (this.applicationKeypad) {
+//        key = '\x1bOF';
+//        break;
+//      }
+//      key = '\x1bOF';
+//      break;
+//    // page up
+//    case 33:
+//      if (ev.shiftKey) {
+//        this.scrollDisp(-(this.rows - 1));
+//        return cancel(ev);
+//      } else {
+//        key = '\x1b[5~';
+//      }
+//      break;
+//    // page down
+//    case 34:
+//      if (ev.shiftKey) {
+//        this.scrollDisp(this.rows - 1);
+//        return cancel(ev);
+//      } else {
+//        key = '\x1b[6~';
+//      }
+//      break;
+//    // F1
+//    case 112:
+//      key = '\x1bOP';
+//      break;
+//    // F2
+//    case 113:
+//      key = '\x1bOQ';
+//      break;
+//    // F3
+//    case 114:
+//      key = '\x1bOR';
+//      break;
+//    // F4
+//    case 115:
+//      key = '\x1bOS';
+//      break;
+//    // F5
+//    case 116:
+//      key = '\x1b[15~';
+//      break;
+//    // F6
+//    case 117:
+//      key = '\x1b[17~';
+//      break;
+//    // F7
+//    case 118:
+//      key = '\x1b[18~';
+//      break;
+//    // F8
+//    case 119:
+//      key = '\x1b[19~';
+//      break;
+//    // F9
+//    case 120:
+//      key = '\x1b[20~';
+//      break;
+//    // F10
+//    case 121:
+//      key = '\x1b[21~';
+//      break;
+//    // F11
+//    case 122:
+//      key = '\x1b[23~';
+//      break;
+//    // F12
+//    case 123:
+//      key = '\x1b[24~';
+//      break;
+//    default:
+//      // a-z and space
+//      if (ev.ctrlKey) {
+//        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+//          // Ctrl-A
+//          if (this.screenKeys) {
+//            if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
+//              this.enterPrefix();
+//              return cancel(ev);
+//            }
+//          }
+//          // Ctrl-V
+//          if (this.prefixMode && ev.keyCode === 86) {
+//            this.leavePrefix();
+//            return;
+//          }
+//          // Ctrl-C
+//          if ((this.prefixMode || this.selectMode) && ev.keyCode === 67) {
+//            if (this.visualMode) {
+//              setTimeout(function() {
+//                self.leaveVisual();
+//              }, 1);
+//            }
+//            return;
+//          }
+//          key = String.fromCharCode(ev.keyCode - 64);
+//        } else if (ev.keyCode === 32) {
+//          // NUL
+//          key = String.fromCharCode(0);
+//        } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
+//          // escape, file sep, group sep, record sep, unit sep
+//          key = String.fromCharCode(ev.keyCode - 51 + 27);
+//        } else if (ev.keyCode === 56) {
+//          // delete
+//          key = String.fromCharCode(127);
+//        } else if (ev.keyCode === 219) {
+//          // ^[ - escape
+//          key = String.fromCharCode(27);
+//        } else if (ev.keyCode === 221) {
+//          // ^] - group sep
+//          key = String.fromCharCode(29);
+//        }
+//      } else if ((!this.isMac && ev.altKey) || (this.isMac && ev.metaKey)) {
+//        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+//          key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+//        } else if (ev.keyCode === 192) {
+//          key = '\x1b`';
+//        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
+//          key = '\x1b' + (ev.keyCode - 48);
+//        }
+//      }
+//      break;
+//  }
+//
+//  if (!key) return true;
+//
+//  if (this.prefixMode) {
+//    this.leavePrefix();
+//    return cancel(ev);
+//  }
+//
+//  if (this.selectMode) {
+//    this.keySelect(ev, key);
+//    return cancel(ev);
+//  }
+//
+//  this.emit('keydown', ev);
+//  this.emit('key', key, ev);
+//
+//  this.showCursor();
+//  this.handler(key);
+//
+//  return cancel(ev);
+//};
 
 Terminal.prototype.setgLevel = function(g) {
   this.glevel = g;
@@ -2666,44 +2666,44 @@ Terminal.prototype.setgCharset = function(g, charset) {
   }
 };
 
-Terminal.prototype.keyPress = function(ev) {
-  var key;
-
-  cancel(ev);
-
-  if (ev.charCode) {
-    key = ev.charCode;
-  } else if (ev.which == null) {
-    key = ev.keyCode;
-  } else if (ev.which !== 0 && ev.charCode !== 0) {
-    key = ev.which;
-  } else {
-    return false;
-  }
-
-  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
-
-  key = String.fromCharCode(key);
-
-  if (this.prefixMode) {
-    this.leavePrefix();
-    this.keyPrefix(ev, key);
-    return false;
-  }
-
-  if (this.selectMode) {
-    this.keySelect(ev, key);
-    return false;
-  }
-
-  this.emit('keypress', key, ev);
-  this.emit('key', key, ev);
-
-  this.showCursor();
-  this.handler(key);
-
-  return false;
-};
+//Terminal.prototype.keyPress = function(ev) {
+//  var key;
+//
+//  cancel(ev);
+//
+//  if (ev.charCode) {
+//    key = ev.charCode;
+//  } else if (ev.which == null) {
+//    key = ev.keyCode;
+//  } else if (ev.which !== 0 && ev.charCode !== 0) {
+//    key = ev.which;
+//  } else {
+//    return false;
+//  }
+//
+//  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+//
+//  key = String.fromCharCode(key);
+//
+//  if (this.prefixMode) {
+//    this.leavePrefix();
+//    this.keyPrefix(ev, key);
+//    return false;
+//  }
+//
+//  if (this.selectMode) {
+//    this.keySelect(ev, key);
+//    return false;
+//  }
+//
+//  this.emit('keypress', key, ev);
+//  this.emit('key', key, ev);
+//
+//  this.showCursor();
+//  this.handler(key);
+//
+//  return false;
+//};
 
 Terminal.prototype.send = function(data) {
   var self = this;
@@ -4951,621 +4951,621 @@ Terminal.prototype.grabText = function(x1, x2, y1, y2) {
   return out;
 };
 
-Terminal.prototype.keyPrefix = function(ev, key) {
-  if (key === 'k' || key === '&') {
-    this.destroy();
-  } else if (key === 'p' || key === ']') {
-    this.emit('request paste');
-  } else if (key === 'c') {
-    this.emit('request create');
-  } else if (key >= '0' && key <= '9') {
-    key = +key - 1;
-    if (!~key) key = 9;
-    this.emit('request term', key);
-  } else if (key === 'n') {
-    this.emit('request term next');
-  } else if (key === 'P') {
-    this.emit('request term previous');
-  } else if (key === ':') {
-    this.emit('request command mode');
-  } else if (key === '[') {
-    this.enterSelect();
-  }
-};
+//Terminal.prototype.keyPrefix = function(ev, key) {
+//  if (key === 'k' || key === '&') {
+//    this.destroy();
+//  } else if (key === 'p' || key === ']') {
+//    this.emit('request paste');
+//  } else if (key === 'c') {
+//    this.emit('request create');
+//  } else if (key >= '0' && key <= '9') {
+//    key = +key - 1;
+//    if (!~key) key = 9;
+//    this.emit('request term', key);
+//  } else if (key === 'n') {
+//    this.emit('request term next');
+//  } else if (key === 'P') {
+//    this.emit('request term previous');
+//  } else if (key === ':') {
+//    this.emit('request command mode');
+//  } else if (key === '[') {
+//    this.enterSelect();
+//  }
+//};
 
-Terminal.prototype.keySelect = function(ev, key) {
-  this.showCursor();
+//Terminal.prototype.keySelect = function(ev, key) {
+//  this.showCursor();
+//
+//  if (this.searchMode || key === 'n' || key === 'N') {
+//    return this.keySearch(ev, key);
+//  }
+//
+//  if (key === '\x04') { // ctrl-d
+//    var y = this.ydisp + this.y;
+//    if (this.ydisp === this.ybase) {
+//      // Mimic vim behavior
+//      this.y = Math.min(this.y + (this.rows - 1) / 2 | 0, this.rows - 1);
+//      this.refresh(0, this.rows - 1);
+//    } else {
+//      this.scrollDisp((this.rows - 1) / 2 | 0);
+//    }
+//    if (this.visualMode) {
+//      this.selectText(this.x, this.x, y, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '\x15') { // ctrl-u
+//    var y = this.ydisp + this.y;
+//    if (this.ydisp === 0) {
+//      // Mimic vim behavior
+//      this.y = Math.max(this.y - (this.rows - 1) / 2 | 0, 0);
+//      this.refresh(0, this.rows - 1);
+//    } else {
+//      this.scrollDisp(-(this.rows - 1) / 2 | 0);
+//    }
+//    if (this.visualMode) {
+//      this.selectText(this.x, this.x, y, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '\x06') { // ctrl-f
+//    var y = this.ydisp + this.y;
+//    this.scrollDisp(this.rows - 1);
+//    if (this.visualMode) {
+//      this.selectText(this.x, this.x, y, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '\x02') { // ctrl-b
+//    var y = this.ydisp + this.y;
+//    this.scrollDisp(-(this.rows - 1));
+//    if (this.visualMode) {
+//      this.selectText(this.x, this.x, y, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'k' || key === '\x1b[A') {
+//    var y = this.ydisp + this.y;
+//    this.y--;
+//    if (this.y < 0) {
+//      this.y = 0;
+//      this.scrollDisp(-1);
+//    }
+//    if (this.visualMode) {
+//      this.selectText(this.x, this.x, y, this.ydisp + this.y);
+//    } else {
+//      this.refresh(this.y, this.y + 1);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'j' || key === '\x1b[B') {
+//    var y = this.ydisp + this.y;
+//    this.y++;
+//    if (this.y >= this.rows) {
+//      this.y = this.rows - 1;
+//      this.scrollDisp(1);
+//    }
+//    if (this.visualMode) {
+//      this.selectText(this.x, this.x, y, this.ydisp + this.y);
+//    } else {
+//      this.refresh(this.y - 1, this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'h' || key === '\x1b[D') {
+//    var x = this.x;
+//    this.x--;
+//    if (this.x < 0) {
+//      this.x = 0;
+//    }
+//    if (this.visualMode) {
+//      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
+//    } else {
+//      this.refresh(this.y, this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'l' || key === '\x1b[C') {
+//    var x = this.x;
+//    this.x++;
+//    if (this.x >= this.cols) {
+//      this.x = this.cols - 1;
+//    }
+//    if (this.visualMode) {
+//      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
+//    } else {
+//      this.refresh(this.y, this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'v' || key === ' ') {
+//    if (!this.visualMode) {
+//      this.enterVisual();
+//    } else {
+//      this.leaveVisual();
+//    }
+//    return;
+//  }
+//
+//  if (key === 'y') {
+//    if (this.visualMode) {
+//      var text = this.grabText(
+//        this._selected.x1, this._selected.x2,
+//        this._selected.y1, this._selected.y2);
+//      this.copyText(text);
+//      this.leaveVisual();
+//      // this.leaveSelect();
+//    }
+//    return;
+//  }
+//
+//  if (key === 'q' || key === '\x1b') {
+//    if (this.visualMode) {
+//      this.leaveVisual();
+//    } else {
+//      this.leaveSelect();
+//    }
+//    return;
+//  }
+//
+//  if (key === 'w' || key === 'W') {
+//    var ox = this.x;
+//    var oy = this.y;
+//    var oyd = this.ydisp;
+//
+//    var x = this.x;
+//    var y = this.y;
+//    var yb = this.ydisp;
+//    var saw_space = false;
+//
+//    for (;;) {
+//      var line = this.lines[yb + y];
+//      while (x < this.cols) {
+//        if (line[x][1] <= ' ') {
+//          saw_space = true;
+//        } else if (saw_space) {
+//          break;
+//        }
+//        x++;
+//      }
+//      if (x >= this.cols) x = this.cols - 1;
+//      if (x === this.cols - 1 && line[x][1] <= ' ') {
+//        x = 0;
+//        if (++y >= this.rows) {
+//          y--;
+//          if (++yb > this.ybase) {
+//            yb = this.ybase;
+//            x = this.x;
+//            break;
+//          }
+//        }
+//        continue;
+//      }
+//      break;
+//    }
+//
+//    this.x = x, this.y = y;
+//    this.scrollDisp(-this.ydisp + yb);
+//
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'b' || key === 'B') {
+//    var ox = this.x;
+//    var oy = this.y;
+//    var oyd = this.ydisp;
+//
+//    var x = this.x;
+//    var y = this.y;
+//    var yb = this.ydisp;
+//
+//    for (;;) {
+//      var line = this.lines[yb + y];
+//      var saw_space = x > 0 && line[x][1] > ' ' && line[x - 1][1] > ' ';
+//      while (x >= 0) {
+//        if (line[x][1] <= ' ') {
+//          if (saw_space && (x + 1 < this.cols && line[x + 1][1] > ' ')) {
+//            x++;
+//            break;
+//          } else {
+//            saw_space = true;
+//          }
+//        }
+//        x--;
+//      }
+//      if (x < 0) x = 0;
+//      if (x === 0 && (line[x][1] <= ' ' || !saw_space)) {
+//        x = this.cols - 1;
+//        if (--y < 0) {
+//          y++;
+//          if (--yb < 0) {
+//            yb++;
+//            x = 0;
+//            break;
+//          }
+//        }
+//        continue;
+//      }
+//      break;
+//    }
+//
+//    this.x = x, this.y = y;
+//    this.scrollDisp(-this.ydisp + yb);
+//
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'e' || key === 'E') {
+//    var x = this.x + 1;
+//    var y = this.y;
+//    var yb = this.ydisp;
+//    if (x >= this.cols) x--;
+//
+//    for (;;) {
+//      var line = this.lines[yb + y];
+//      while (x < this.cols) {
+//        if (line[x][1] <= ' ') {
+//          x++;
+//        } else {
+//          break;
+//        }
+//      }
+//      while (x < this.cols) {
+//        if (line[x][1] <= ' ') {
+//          if (x - 1 >= 0 && line[x - 1][1] > ' ') {
+//            x--;
+//            break;
+//          }
+//        }
+//        x++;
+//      }
+//      if (x >= this.cols) x = this.cols - 1;
+//      if (x === this.cols - 1 && line[x][1] <= ' ') {
+//        x = 0;
+//        if (++y >= this.rows) {
+//          y--;
+//          if (++yb > this.ybase) {
+//            yb = this.ybase;
+//            break;
+//          }
+//        }
+//        continue;
+//      }
+//      break;
+//    }
+//
+//    this.x = x, this.y = y;
+//    this.scrollDisp(-this.ydisp + yb);
+//
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '^' || key === '0') {
+//    var ox = this.x;
+//
+//    if (key === '0') {
+//      this.x = 0;
+//    } else if (key === '^') {
+//      var line = this.lines[this.ydisp + this.y];
+//      var x = 0;
+//      while (x < this.cols) {
+//        if (line[x][1] > ' ') {
+//          break;
+//        }
+//        x++;
+//      }
+//      if (x >= this.cols) x = this.cols - 1;
+//      this.x = x;
+//    }
+//
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
+//    } else {
+//      this.refresh(this.y, this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '$') {
+//    var ox = this.x;
+//    var line = this.lines[this.ydisp + this.y];
+//    var x = this.cols - 1;
+//    while (x >= 0) {
+//      if (line[x][1] > ' ') {
+//        if (this.visualMode && x < this.cols - 1) x++;
+//        break;
+//      }
+//      x--;
+//    }
+//    if (x < 0) x = 0;
+//    this.x = x;
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
+//    } else {
+//      this.refresh(this.y, this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'g' || key === 'G') {
+//    var ox = this.x;
+//    var oy = this.y;
+//    var oyd = this.ydisp;
+//    if (key === 'g') {
+//      this.x = 0, this.y = 0;
+//      this.scrollDisp(-this.ydisp);
+//    } else if (key === 'G') {
+//      this.x = 0, this.y = this.rows - 1;
+//      this.scrollDisp(this.ybase);
+//    }
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === 'H' || key === 'M' || key === 'L') {
+//    var ox = this.x;
+//    var oy = this.y;
+//    if (key === 'H') {
+//      this.x = 0, this.y = 0;
+//    } else if (key === 'M') {
+//      this.x = 0, this.y = this.rows / 2 | 0;
+//    } else if (key === 'L') {
+//      this.x = 0, this.y = this.rows - 1;
+//    }
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, this.ydisp + oy, this.ydisp + this.y);
+//    } else {
+//      this.refresh(oy, oy);
+//      this.refresh(this.y, this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '{' || key === '}') {
+//    var ox = this.x;
+//    var oy = this.y;
+//    var oyd = this.ydisp;
+//
+//    var line;
+//    var saw_full = false;
+//    var found = false;
+//    var first_is_space = -1;
+//    var y = this.y + (key === '{' ? -1 : 1);
+//    var yb = this.ydisp;
+//    var i;
+//
+//    if (key === '{') {
+//      if (y < 0) {
+//        y++;
+//        if (yb > 0) yb--;
+//      }
+//    } else if (key === '}') {
+//      if (y >= this.rows) {
+//        y--;
+//        if (yb < this.ybase) yb++;
+//      }
+//    }
+//
+//    for (;;) {
+//      line = this.lines[yb + y];
+//
+//      for (i = 0; i < this.cols; i++) {
+//        if (line[i][1] > ' ') {
+//          if (first_is_space === -1) {
+//            first_is_space = 0;
+//          }
+//          saw_full = true;
+//          break;
+//        } else if (i === this.cols - 1) {
+//          if (first_is_space === -1) {
+//            first_is_space = 1;
+//          } else if (first_is_space === 0) {
+//            found = true;
+//          } else if (first_is_space === 1) {
+//            if (saw_full) found = true;
+//          }
+//          break;
+//        }
+//      }
+//
+//      if (found) break;
+//
+//      if (key === '{') {
+//        y--;
+//        if (y < 0) {
+//          y++;
+//          if (yb > 0) yb--;
+//          else break;
+//        }
+//      } else if (key === '}') {
+//        y++;
+//        if (y >= this.rows) {
+//          y--;
+//          if (yb < this.ybase) yb++;
+//          else break;
+//        }
+//      }
+//    }
+//
+//    if (!found) {
+//      if (key === '{') {
+//        y = 0;
+//        yb = 0;
+//      } else if (key === '}') {
+//        y = this.rows - 1;
+//        yb = this.ybase;
+//      }
+//    }
+//
+//    this.x = 0, this.y = y;
+//    this.scrollDisp(-this.ydisp + yb);
+//
+//    if (this.visualMode) {
+//      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
+//    }
+//    return;
+//  }
+//
+//  if (key === '/' || key === '?') {
+//    if (!this.visualMode) {
+//      this.enterSearch(key === '/');
+//    }
+//    return;
+//  }
+//
+//  return false;
+//};
 
-  if (this.searchMode || key === 'n' || key === 'N') {
-    return this.keySearch(ev, key);
-  }
-
-  if (key === '\x04') { // ctrl-d
-    var y = this.ydisp + this.y;
-    if (this.ydisp === this.ybase) {
-      // Mimic vim behavior
-      this.y = Math.min(this.y + (this.rows - 1) / 2 | 0, this.rows - 1);
-      this.refresh(0, this.rows - 1);
-    } else {
-      this.scrollDisp((this.rows - 1) / 2 | 0);
-    }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === '\x15') { // ctrl-u
-    var y = this.ydisp + this.y;
-    if (this.ydisp === 0) {
-      // Mimic vim behavior
-      this.y = Math.max(this.y - (this.rows - 1) / 2 | 0, 0);
-      this.refresh(0, this.rows - 1);
-    } else {
-      this.scrollDisp(-(this.rows - 1) / 2 | 0);
-    }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === '\x06') { // ctrl-f
-    var y = this.ydisp + this.y;
-    this.scrollDisp(this.rows - 1);
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === '\x02') { // ctrl-b
-    var y = this.ydisp + this.y;
-    this.scrollDisp(-(this.rows - 1));
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === 'k' || key === '\x1b[A') {
-    var y = this.ydisp + this.y;
-    this.y--;
-    if (this.y < 0) {
-      this.y = 0;
-      this.scrollDisp(-1);
-    }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y + 1);
-    }
-    return;
-  }
-
-  if (key === 'j' || key === '\x1b[B') {
-    var y = this.ydisp + this.y;
-    this.y++;
-    if (this.y >= this.rows) {
-      this.y = this.rows - 1;
-      this.scrollDisp(1);
-    }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y - 1, this.y);
-    }
-    return;
-  }
-
-  if (key === 'h' || key === '\x1b[D') {
-    var x = this.x;
-    this.x--;
-    if (this.x < 0) {
-      this.x = 0;
-    }
-    if (this.visualMode) {
-      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
-    return;
-  }
-
-  if (key === 'l' || key === '\x1b[C') {
-    var x = this.x;
-    this.x++;
-    if (this.x >= this.cols) {
-      this.x = this.cols - 1;
-    }
-    if (this.visualMode) {
-      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
-    return;
-  }
-
-  if (key === 'v' || key === ' ') {
-    if (!this.visualMode) {
-      this.enterVisual();
-    } else {
-      this.leaveVisual();
-    }
-    return;
-  }
-
-  if (key === 'y') {
-    if (this.visualMode) {
-      var text = this.grabText(
-        this._selected.x1, this._selected.x2,
-        this._selected.y1, this._selected.y2);
-      this.copyText(text);
-      this.leaveVisual();
-      // this.leaveSelect();
-    }
-    return;
-  }
-
-  if (key === 'q' || key === '\x1b') {
-    if (this.visualMode) {
-      this.leaveVisual();
-    } else {
-      this.leaveSelect();
-    }
-    return;
-  }
-
-  if (key === 'w' || key === 'W') {
-    var ox = this.x;
-    var oy = this.y;
-    var oyd = this.ydisp;
-
-    var x = this.x;
-    var y = this.y;
-    var yb = this.ydisp;
-    var saw_space = false;
-
-    for (;;) {
-      var line = this.lines[yb + y];
-      while (x < this.cols) {
-        if (line[x][1] <= ' ') {
-          saw_space = true;
-        } else if (saw_space) {
-          break;
-        }
-        x++;
-      }
-      if (x >= this.cols) x = this.cols - 1;
-      if (x === this.cols - 1 && line[x][1] <= ' ') {
-        x = 0;
-        if (++y >= this.rows) {
-          y--;
-          if (++yb > this.ybase) {
-            yb = this.ybase;
-            x = this.x;
-            break;
-          }
-        }
-        continue;
-      }
-      break;
-    }
-
-    this.x = x, this.y = y;
-    this.scrollDisp(-this.ydisp + yb);
-
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === 'b' || key === 'B') {
-    var ox = this.x;
-    var oy = this.y;
-    var oyd = this.ydisp;
-
-    var x = this.x;
-    var y = this.y;
-    var yb = this.ydisp;
-
-    for (;;) {
-      var line = this.lines[yb + y];
-      var saw_space = x > 0 && line[x][1] > ' ' && line[x - 1][1] > ' ';
-      while (x >= 0) {
-        if (line[x][1] <= ' ') {
-          if (saw_space && (x + 1 < this.cols && line[x + 1][1] > ' ')) {
-            x++;
-            break;
-          } else {
-            saw_space = true;
-          }
-        }
-        x--;
-      }
-      if (x < 0) x = 0;
-      if (x === 0 && (line[x][1] <= ' ' || !saw_space)) {
-        x = this.cols - 1;
-        if (--y < 0) {
-          y++;
-          if (--yb < 0) {
-            yb++;
-            x = 0;
-            break;
-          }
-        }
-        continue;
-      }
-      break;
-    }
-
-    this.x = x, this.y = y;
-    this.scrollDisp(-this.ydisp + yb);
-
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === 'e' || key === 'E') {
-    var x = this.x + 1;
-    var y = this.y;
-    var yb = this.ydisp;
-    if (x >= this.cols) x--;
-
-    for (;;) {
-      var line = this.lines[yb + y];
-      while (x < this.cols) {
-        if (line[x][1] <= ' ') {
-          x++;
-        } else {
-          break;
-        }
-      }
-      while (x < this.cols) {
-        if (line[x][1] <= ' ') {
-          if (x - 1 >= 0 && line[x - 1][1] > ' ') {
-            x--;
-            break;
-          }
-        }
-        x++;
-      }
-      if (x >= this.cols) x = this.cols - 1;
-      if (x === this.cols - 1 && line[x][1] <= ' ') {
-        x = 0;
-        if (++y >= this.rows) {
-          y--;
-          if (++yb > this.ybase) {
-            yb = this.ybase;
-            break;
-          }
-        }
-        continue;
-      }
-      break;
-    }
-
-    this.x = x, this.y = y;
-    this.scrollDisp(-this.ydisp + yb);
-
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === '^' || key === '0') {
-    var ox = this.x;
-
-    if (key === '0') {
-      this.x = 0;
-    } else if (key === '^') {
-      var line = this.lines[this.ydisp + this.y];
-      var x = 0;
-      while (x < this.cols) {
-        if (line[x][1] > ' ') {
-          break;
-        }
-        x++;
-      }
-      if (x >= this.cols) x = this.cols - 1;
-      this.x = x;
-    }
-
-    if (this.visualMode) {
-      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
-    return;
-  }
-
-  if (key === '$') {
-    var ox = this.x;
-    var line = this.lines[this.ydisp + this.y];
-    var x = this.cols - 1;
-    while (x >= 0) {
-      if (line[x][1] > ' ') {
-        if (this.visualMode && x < this.cols - 1) x++;
-        break;
-      }
-      x--;
-    }
-    if (x < 0) x = 0;
-    this.x = x;
-    if (this.visualMode) {
-      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
-    return;
-  }
-
-  if (key === 'g' || key === 'G') {
-    var ox = this.x;
-    var oy = this.y;
-    var oyd = this.ydisp;
-    if (key === 'g') {
-      this.x = 0, this.y = 0;
-      this.scrollDisp(-this.ydisp);
-    } else if (key === 'G') {
-      this.x = 0, this.y = this.rows - 1;
-      this.scrollDisp(this.ybase);
-    }
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === 'H' || key === 'M' || key === 'L') {
-    var ox = this.x;
-    var oy = this.y;
-    if (key === 'H') {
-      this.x = 0, this.y = 0;
-    } else if (key === 'M') {
-      this.x = 0, this.y = this.rows / 2 | 0;
-    } else if (key === 'L') {
-      this.x = 0, this.y = this.rows - 1;
-    }
-    if (this.visualMode) {
-      this.selectText(ox, this.x, this.ydisp + oy, this.ydisp + this.y);
-    } else {
-      this.refresh(oy, oy);
-      this.refresh(this.y, this.y);
-    }
-    return;
-  }
-
-  if (key === '{' || key === '}') {
-    var ox = this.x;
-    var oy = this.y;
-    var oyd = this.ydisp;
-
-    var line;
-    var saw_full = false;
-    var found = false;
-    var first_is_space = -1;
-    var y = this.y + (key === '{' ? -1 : 1);
-    var yb = this.ydisp;
-    var i;
-
-    if (key === '{') {
-      if (y < 0) {
-        y++;
-        if (yb > 0) yb--;
-      }
-    } else if (key === '}') {
-      if (y >= this.rows) {
-        y--;
-        if (yb < this.ybase) yb++;
-      }
-    }
-
-    for (;;) {
-      line = this.lines[yb + y];
-
-      for (i = 0; i < this.cols; i++) {
-        if (line[i][1] > ' ') {
-          if (first_is_space === -1) {
-            first_is_space = 0;
-          }
-          saw_full = true;
-          break;
-        } else if (i === this.cols - 1) {
-          if (first_is_space === -1) {
-            first_is_space = 1;
-          } else if (first_is_space === 0) {
-            found = true;
-          } else if (first_is_space === 1) {
-            if (saw_full) found = true;
-          }
-          break;
-        }
-      }
-
-      if (found) break;
-
-      if (key === '{') {
-        y--;
-        if (y < 0) {
-          y++;
-          if (yb > 0) yb--;
-          else break;
-        }
-      } else if (key === '}') {
-        y++;
-        if (y >= this.rows) {
-          y--;
-          if (yb < this.ybase) yb++;
-          else break;
-        }
-      }
-    }
-
-    if (!found) {
-      if (key === '{') {
-        y = 0;
-        yb = 0;
-      } else if (key === '}') {
-        y = this.rows - 1;
-        yb = this.ybase;
-      }
-    }
-
-    this.x = 0, this.y = y;
-    this.scrollDisp(-this.ydisp + yb);
-
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === '/' || key === '?') {
-    if (!this.visualMode) {
-      this.enterSearch(key === '/');
-    }
-    return;
-  }
-
-  return false;
-};
-
-Terminal.prototype.keySearch = function(ev, key) {
-  if (key === '\x1b') {
-    this.leaveSearch();
-    return;
-  }
-
-  if (key === '\r' || (!this.searchMode && (key === 'n' || key === 'N'))) {
-    this.leaveSearch();
-
-    var entry = this.entry;
-
-    if (!entry) {
-      this.refresh(0, this.rows - 1);
-      return;
-    }
-
-    var ox = this.x;
-    var oy = this.y;
-    var oyd = this.ydisp;
-
-    var line;
-    var found = false;
-    var wrapped = false;
-    var x = this.x + 1;
-    var y = this.ydisp + this.y;
-    var yb, i;
-    var up = key === 'N'
-      ? this.searchDown
-      : !this.searchDown;
-
-    for (;;) {
-      line = this.lines[y];
-
-      while (x < this.cols) {
-        for (i = 0; i < entry.length; i++) {
-          if (x + i >= this.cols) break;
-          if (line[x + i][1] !== entry[i]) {
-            break;
-          } else if (line[x + i][1] === entry[i] && i === entry.length - 1) {
-            found = true;
-            break;
-          }
-        }
-        if (found) break;
-        x += i + 1;
-      }
-      if (found) break;
-
-      x = 0;
-
-      if (!up) {
-        y++;
-        if (y > this.ybase + this.rows - 1) {
-          if (wrapped) break;
-          // this.setMessage('Search wrapped. Continuing at TOP.');
-          wrapped = true;
-          y = 0;
-        }
-      } else {
-        y--;
-        if (y < 0) {
-          if (wrapped) break;
-          // this.setMessage('Search wrapped. Continuing at BOTTOM.');
-          wrapped = true;
-          y = this.ybase + this.rows - 1;
-        }
-      }
-    }
-
-    if (found) {
-      if (y - this.ybase < 0) {
-        yb = y;
-        y = 0;
-        if (yb > this.ybase) {
-          y = yb - this.ybase;
-          yb = this.ybase;
-        }
-      } else {
-        yb = this.ybase;
-        y -= this.ybase;
-      }
-
-      this.x = x, this.y = y;
-      this.scrollDisp(-this.ydisp + yb);
-
-      if (this.visualMode) {
-        this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-      }
-      return;
-    }
-
-    // this.setMessage("No matches found.");
-    this.refresh(0, this.rows - 1);
-
-    return;
-  }
-
-  if (key === '\b' || key === '\x7f') {
-    if (this.entry.length === 0) return;
-    var bottom = this.ydisp + this.rows - 1;
-    this.entry = this.entry.slice(0, -1);
-    var i = this.entryPrefix.length + this.entry.length;
-    //this.lines[bottom][i][1] = ' ';
-    this.lines[bottom][i] = [
-      this.lines[bottom][i][0],
-      ' '
-    ];
-    this.x--;
-    this.refresh(this.rows - 1, this.rows - 1);
-    this.refresh(this.y, this.y);
-    return;
-  }
-
-  if (key.length === 1 && key >= ' ' && key <= '~') {
-    var bottom = this.ydisp + this.rows - 1;
-    this.entry += key;
-    var i = this.entryPrefix.length + this.entry.length - 1;
-    //this.lines[bottom][i][0] = (this.defAttr & ~0x1ff) | 4;
-    //this.lines[bottom][i][1] = key;
-    this.lines[bottom][i] = [
-      (this.defAttr & ~0x1ff) | 4,
-      key
-    ];
-    this.x++;
-    this.refresh(this.rows - 1, this.rows - 1);
-    this.refresh(this.y, this.y);
-    return;
-  }
-
-  return false;
-};
+//Terminal.prototype.keySearch = function(ev, key) {
+//  if (key === '\x1b') {
+//    this.leaveSearch();
+//    return;
+//  }
+//
+//  if (key === '\r' || (!this.searchMode && (key === 'n' || key === 'N'))) {
+//    this.leaveSearch();
+//
+//    var entry = this.entry;
+//
+//    if (!entry) {
+//      this.refresh(0, this.rows - 1);
+//      return;
+//    }
+//
+//    var ox = this.x;
+//    var oy = this.y;
+//    var oyd = this.ydisp;
+//
+//    var line;
+//    var found = false;
+//    var wrapped = false;
+//    var x = this.x + 1;
+//    var y = this.ydisp + this.y;
+//    var yb, i;
+//    var up = key === 'N'
+//      ? this.searchDown
+//      : !this.searchDown;
+//
+//    for (;;) {
+//      line = this.lines[y];
+//
+//      while (x < this.cols) {
+//        for (i = 0; i < entry.length; i++) {
+//          if (x + i >= this.cols) break;
+//          if (line[x + i][1] !== entry[i]) {
+//            break;
+//          } else if (line[x + i][1] === entry[i] && i === entry.length - 1) {
+//            found = true;
+//            break;
+//          }
+//        }
+//        if (found) break;
+//        x += i + 1;
+//      }
+//      if (found) break;
+//
+//      x = 0;
+//
+//      if (!up) {
+//        y++;
+//        if (y > this.ybase + this.rows - 1) {
+//          if (wrapped) break;
+//          // this.setMessage('Search wrapped. Continuing at TOP.');
+//          wrapped = true;
+//          y = 0;
+//        }
+//      } else {
+//        y--;
+//        if (y < 0) {
+//          if (wrapped) break;
+//          // this.setMessage('Search wrapped. Continuing at BOTTOM.');
+//          wrapped = true;
+//          y = this.ybase + this.rows - 1;
+//        }
+//      }
+//    }
+//
+//    if (found) {
+//      if (y - this.ybase < 0) {
+//        yb = y;
+//        y = 0;
+//        if (yb > this.ybase) {
+//          y = yb - this.ybase;
+//          yb = this.ybase;
+//        }
+//      } else {
+//        yb = this.ybase;
+//        y -= this.ybase;
+//      }
+//
+//      this.x = x, this.y = y;
+//      this.scrollDisp(-this.ydisp + yb);
+//
+//      if (this.visualMode) {
+//        this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
+//      }
+//      return;
+//    }
+//
+//    // this.setMessage("No matches found.");
+//    this.refresh(0, this.rows - 1);
+//
+//    return;
+//  }
+//
+//  if (key === '\b' || key === '\x7f') {
+//    if (this.entry.length === 0) return;
+//    var bottom = this.ydisp + this.rows - 1;
+//    this.entry = this.entry.slice(0, -1);
+//    var i = this.entryPrefix.length + this.entry.length;
+//    //this.lines[bottom][i][1] = ' ';
+//    this.lines[bottom][i] = [
+//      this.lines[bottom][i][0],
+//      ' '
+//    ];
+//    this.x--;
+//    this.refresh(this.rows - 1, this.rows - 1);
+//    this.refresh(this.y, this.y);
+//    return;
+//  }
+//
+//  if (key.length === 1 && key >= ' ' && key <= '~') {
+//    var bottom = this.ydisp + this.rows - 1;
+//    this.entry += key;
+//    var i = this.entryPrefix.length + this.entry.length - 1;
+//    //this.lines[bottom][i][0] = (this.defAttr & ~0x1ff) | 4;
+//    //this.lines[bottom][i][1] = key;
+//    this.lines[bottom][i] = [
+//      (this.defAttr & ~0x1ff) | 4,
+//      key
+//    ];
+//    this.x++;
+//    this.refresh(this.rows - 1, this.rows - 1);
+//    this.refresh(this.y, this.y);
+//    return;
+//  }
+//
+//  return false;
+//};
 
 /**
  * Character Sets
