@@ -5660,13 +5660,18 @@ function inherits(child, parent) {
 // use it in the terminal.
 function isBoldBroken(document) {
   var body = document.getElementsByTagName('body')[0];
+  var terminal = document.createElement('div');
+  terminal.className = 'terminal';
+  var line = document.createElement('div');
   var el = document.createElement('span');
   el.innerHTML = 'hello world';
-  body.appendChild(el);
+  line.appendChild(el);
+  terminal.appendChild(line);
+  body.appendChild(terminal);
   var w1 = el.scrollWidth;
   el.style.fontWeight = 'bold';
   var w2 = el.scrollWidth;
-  body.removeChild(el);
+  body.removeChild(terminal);
   return w1 !== w2;
 }
 
