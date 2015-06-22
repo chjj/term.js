@@ -2209,19 +2209,19 @@ Terminal.prototype.write = function(data) {
           // CSI Pt; Pl; Pb; Pr; Ps$ t
           // CSI > Ps; Ps t
           // CSI Ps SP t
-          // case 't':
-          //   if (this.postfix === '$') {
-          //     this.reverseAttrInRectangle(this.params);
-          //   } else if (this.postfix === ' ') {
-          //     this.setWarningBellVolume(this.params);
-          //   } else {
-          //     if (this.prefix === '>') {
-          //       this.setTitleModeFeature(this.params);
-          //     } else {
-          //       this.manipulateWindow(this.params);
-          //     }
-          //   }
-          //   break;
+          case 't':
+            if (this.postfix === '$') {
+              this.reverseAttrInRectangle(this.params);
+            } else if (this.postfix === ' ') {
+              this.setWarningBellVolume(this.params);
+            } else {
+              if (this.prefix === '>') {
+                this.setTitleModeFeature(this.params);
+              } else {
+                this.manipulateWindow(this.params);
+              }
+            }
+            break;
 
           // CSI u     Restore cursor (ANSI.SYS).
           // CSI Ps SP u
@@ -2815,6 +2815,7 @@ Terminal.prototype.resize = function(x, y) {
   // screen buffer. just set it
   // to null for now.
   this.normal = null;
+  this.emit('resize', this.cols, this.rows);
 };
 
 Terminal.prototype.updateRange = function(y) {
@@ -4352,7 +4353,28 @@ Terminal.prototype.savePrivateValues = function(params) {
 //     Ps = 2 3  ;  2  -> Restore xterm window title from stack.
 //     Ps >= 2 4  -> Resize to Ps lines (DECSLPP).
 Terminal.prototype.manipulateWindow = function(params) {
-  ;
+  switch (params[0]) {
+    case 8:
+      this.resize(params[2], params[1]);
+      break;
+    // case 22:
+    //   // We only have a window title, not an icon title.
+    //   if (params[1] == 0 || params[1] == 2) {
+    //     this.titleStack || (this.titleStack = []);
+    //     this.titleStack.push(this.title);
+    //   }
+    //   break;
+    // case 23:
+    //   // We only have a window title, not an icon title.
+    //   if ((params[1] == 0 || params[1] == 2) && this.titleStack) {
+    //     var title = this.titleStack.pop();
+    //     if (title !== undefined) {
+    //       this.title = title;
+    //       this.handleTitle(this.title);
+    //     }
+    //   }
+    //   break;
+  }
 };
 
 // CSI Pt; Pl; Pb; Pr; Ps$ t
