@@ -308,7 +308,7 @@ Terminal.tangoColors = [
   '#555753',
   '#ef2929',
   '#8ae234',
-  '#fce94f',
+  '#db970d',
   '#729fcf',
   '#ad7fa8',
   '#34e2e2',
