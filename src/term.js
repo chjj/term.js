@@ -725,8 +725,6 @@ Terminal.prototype.open = function(parent) {
   this.element.style.outline = 'none';
   this.element.setAttribute('tabindex', 0);
   this.element.setAttribute('spellcheck', 'false');
-  this.element.style.backgroundColor = this.colors[256];
-  this.element.style.color = this.colors[257];
 
   // Create the lines for our terminal.
   this.children = [];
