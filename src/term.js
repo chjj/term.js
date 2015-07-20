@@ -124,7 +124,8 @@ var normal = 0
   , osc = 3
   , charset = 4
   , dcs = 5
-  , ignore = 6;
+  , ignore = 6
+  , UDK = { type: 'udk' };
 
 /**
  * Terminal
@@ -1440,7 +1441,7 @@ Terminal.prototype.write = function(data) {
 
   // this.log(JSON.stringify(data.replace(/\x1b/g, '^[')));
 
-  for (; i < l; i++) {
+  for (; i < l; i++, this.lch = ch) {
     ch = data[i];
     switch (this.state) {
       case normal:
@@ -1556,7 +1557,8 @@ Terminal.prototype.write = function(data) {
           // ESC P Device Control String ( DCS is 0x90).
           case 'P':
             this.params = [];
-            this.currentParam = 0;
+            this.prefix = '';
+            this.currentParam = '';
             this.state = dcs;
             break;
 
@@ -1779,8 +1781,14 @@ Terminal.prototype.write = function(data) {
         // OSC Ps ; Pt ST
         // OSC Ps ; Pt BEL
         //   Set Text Parameters.
-        if (ch === '\x1b' || ch === '\x07') {
-          if (ch === '\x1b') i++;
+        if ((this.lch === '\x1b' && ch === '\\') || ch === '\x07') {
+          if (this.lch === '\x1b') {
+            if (typeof this.currentParam === 'string') {
+              this.currentParam = this.currentParam.slice(0, -1);
+            } else if (typeof this.currentParam == 'number') {
+              this.currentParam = (this.currentParam - ('\x1b'.charCodeAt(0) - 48)) / 10;
+            }
+          }
 
           this.params.push(this.currentParam);
 
@@ -2312,94 +2320,159 @@ Terminal.prototype.write = function(data) {
         break;
 
       case dcs:
-        if (ch === '\x1b' || ch === '\x07') {
-          if (ch === '\x1b') i++;
+        if ((this.lch === '\x1b' && ch === '\\') || ch === '\x07') {
+          // Workarounds:
+          if (this.prefix === 'tmux;\x1b') {
+            // `DCS tmux; Pt ST` may contain a Pt with an ST
+            // XXX Does tmux work this way?
+            // if (this.lch === '\x1b' & data[i + 1] === '\x1b' && data[i + 2] === '\\') {
+            //   this.currentParam += ch;
+            //   continue;
+            // }
+            // Tmux only accepts ST, not BEL:
+            if (ch === '\x07') {
+              this.currentParam += ch;
+              continue;
+            }
+          }
+
+          if (this.lch === '\x1b') {
+            if (typeof this.currentParam === 'string') {
+              this.currentParam = this.currentParam.slice(0, -1);
+            } else if (typeof this.currentParam == 'number') {
+              this.currentParam = (this.currentParam - ('\x1b'.charCodeAt(0) - 48)) / 10;
+            }
+          }
+
+          this.params.push(this.currentParam);
+          this.currentParam = '';
+
+          var pt = this.params[this.params.length - 1];
 
           switch (this.prefix) {
             // User-Defined Keys (DECUDK).
-            case '':
+            // DCS Ps; Ps| Pt ST
+            case UDK:
+              this.emit('udk', {
+                clearAll: this.params[0] === 0,
+                eraseBelow: this.params[0] === 1,
+                lockKeys: this.params[1] === 0,
+                dontLockKeys: this.params[1] === 1,
+                keyList: (this.params[2] + '').split(';').map(function(part) {
+                  part = part.split('/');
+                  return {
+                    keyCode: part[0],
+                    hexKeyValue: part[1]
+                  };
+                })
+              });
               break;
 
             // Request Status String (DECRQSS).
+            // DCS $ q Pt ST
             // test: echo -e '\eP$q"p\e\\'
             case '$q':
-              var pt = this.currentParam
-                , valid = false;
+              var valid = 0;
 
               switch (pt) {
                 // DECSCA
+                // CSI Ps " q
                 case '"q':
                   pt = '0"q';
+                  valid = 1;
                   break;
 
                 // DECSCL
+                // CSI Ps ; Ps " p
                 case '"p':
-                  pt = '61"p';
+                  pt = '61;0"p';
+                  valid = 1;
                   break;
 
                 // DECSTBM
+                // CSI Ps ; Ps r
                 case 'r':
                   pt = ''
                     + (this.scrollTop + 1)
                     + ';'
                     + (this.scrollBottom + 1)
                     + 'r';
+                  valid = 1;
                   break;
 
                 // SGR
+                // CSI Pm m
                 case 'm':
-                  pt = '0m';
+                  // TODO: Parse this.curAttr here.
+                  // pt = '0m';
+                  // valid = 1;
+                  valid = 0; // Not implemented.
                   break;
 
                 default:
                   this.error('Unknown DCS Pt: %s.', pt);
-                  pt = '';
+                  valid = 0; // unimplemented
                   break;
               }
 
-              this.send('\x1bP' + +valid + '$r' + pt + '\x1b\\');
+              this.send('\x1bP' + valid + '$r' + pt + '\x1b\\');
               break;
 
             // Set Termcap/Terminfo Data (xterm, experimental).
+            // DCS + p Pt ST
             case '+p':
+              this.emit('set terminfo', {
+                name: this.params[0]
+              });
               break;
 
             // Request Termcap/Terminfo String (xterm, experimental)
             // Regular xterm does not even respond to this sequence.
             // This can cause a small glitch in vim.
+            // DCS + q Pt ST
             // test: echo -ne '\eP+q6b64\e\\'
             case '+q':
-              var pt = this.currentParam
-                , valid = false;
-
+              var valid = false;
               this.send('\x1bP' + +valid + '+r' + pt + '\x1b\\');
               break;
 
+            // Implement tmux sequence forwarding is
+            // someone uses term.js for a multiplexer.
+            // DCS tmux; ESC Pt ST
+            case 'tmux;\x1b':
+              this.emit('passthrough', pt);
+              break;
+
             default:
-              this.error('Unknown DCS prefix: %s.', this.prefix);
+              this.error('Unknown DCS prefix: %s.', pt);
               break;
           }
 
-          this.currentParam = 0;
+          this.currentParam = '';
           this.prefix = '';
           this.state = normal;
-        } else if (!this.currentParam) {
-          if (!this.prefix && ch !== '$' && ch !== '+') {
-            this.currentParam = ch;
-          } else if (this.prefix.length === 2) {
-            this.currentParam = ch;
-          } else {
-            this.prefix += ch;
-          }
         } else {
           this.currentParam += ch;
+          if (!this.prefix) {
+            if (/^\d*;\d*\|/.test(this.currentParam)) {
+              this.prefix = UDK;
+              this.params = this.currentParam.split(/[;|]/).map(function(n) {
+                if (!n.length) return 0;
+                return +n;
+              }).slice(0, -1);
+              this.currentParam = '';
+            } else if (/^[$+][a-zA-Z]/.test(this.currentParam)
+                || /^\w+;\x1b/.test(this.currentParam)) {
+              this.prefix = this.currentParam;
+              this.currentParam = '';
+            }
+          }
         }
         break;
 
       case ignore:
         // For PM and APC.
-        if (ch === '\x1b' || ch === '\x07') {
-          if (ch === '\x1b') i++;
+        if ((this.lch === '\x1b' && ch === '\\') || ch === '\x07') {
           this.state = normal;
         }
         break;
