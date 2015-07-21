@@ -2345,7 +2345,6 @@ Terminal.prototype.write = function(data) {
           }
 
           this.params.push(this.currentParam);
-          this.currentParam = '';
 
           var pt = this.params[this.params.length - 1];
 
@@ -2448,7 +2447,7 @@ Terminal.prototype.write = function(data) {
               break;
           }
 
-          this.currentParam = '';
+          this.currentParam = 0;
           this.prefix = '';
           this.state = normal;
         } else {
