@@ -1367,8 +1367,8 @@ Terminal.prototype.startBlink = function() {
 };
 
 Terminal.prototype.refreshBlink = function() {
-  if (!this.cursorBlink) return;
   clearInterval(this._blink);
+  if (!this.cursorBlink) return;
   this._blink = setInterval(this._blinker, 500);
 };
 
