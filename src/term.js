@@ -2495,6 +2495,10 @@ Terminal.prototype.keyDown = function(ev) {
   switch (ev.keyCode) {
     // backspace
     case 8:
+      if (ev.altKey) {
+        key = '\x17';
+        break;
+      }
       if (ev.shiftKey) {
         key = '\x08'; // ^H
         break;
@@ -2524,12 +2528,20 @@ Terminal.prototype.keyDown = function(ev) {
         //key = '\x8fD'; // SS3 as 0x8f for 8-bit
         break;
       }
+      if (ev.ctrlKey) {
+        key = '\x1b[5D';
+        break;
+      }
       key = '\x1b[D';
       break;
     // right-arrow
     case 39:
       if (this.applicationCursor) {
         key = '\x1bOC';
+        break;
+      }
+      if (ev.ctrlKey) {
+        key = '\x1b[5C';
         break;
       }
       key = '\x1b[C';
