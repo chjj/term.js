@@ -3,6 +3,7 @@
   "description": "A terminal written in javascript",
   "author": "Christopher Jeffrey",
   "version": "0.0.5",
+  "license": "MIT",
   "main": "./index.js",
   "preferGlobal": false,
   "repository": "git://github.com/chjj/term.js.git",
@@ -14,6 +15,6 @@
   "devDependencies": {
     "express": "3.1.0",
     "socket.io": "0.9.13",
-    "pty.js": "0.2.4"
+    "pty.js": ">= 0.2.13"
   }
 }

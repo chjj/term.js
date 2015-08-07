@@ -1102,10 +1102,11 @@ Terminal.prototype.bindMouse = function() {
 
     // fix for odd bug
     //if (self.vt200Mouse && !self.normalMouse) {
-    if (self.vt200Mouse) {
-      sendButton({ __proto__: ev, type: 'mouseup' });
-      return cancel(ev);
-    }
+    // XXX This seems to break certain programs.
+    // if (self.vt200Mouse) {
+    //   sendButton({ __proto__: ev, type: 'mouseup' });
+    //   return cancel(ev);
+    // }
 
     // bind events
     if (self.normalMouse) on(self.document, 'mousemove', sendMove);
