@@ -1156,6 +1156,10 @@ Terminal.prototype.bindMouse = function() {
  */
 
 Terminal.prototype.destroy = function() {
+  if (this._blink) {
+    clearInterval(this._blink);
+    delete this._blink;
+  }
   this.readable = false;
   this.writable = false;
   this._events = {};
@@ -1368,7 +1372,7 @@ Terminal.prototype.startBlink = function() {
 };
 
 Terminal.prototype.refreshBlink = function() {
-  if (!this.cursorBlink) return;
+  if (!this.cursorBlink || !this._blink) return;
   clearInterval(this._blink);
   this._blink = setInterval(this._blinker, 500);
 };
