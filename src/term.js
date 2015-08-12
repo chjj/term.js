@@ -664,6 +664,10 @@ Terminal.insertStyle = function(document, bg, fg) {
     + '.terminal-cursor {\n'
     + '  color: ' + bg + ';\n'
     + '  background: ' + fg + ';\n'
+    + '}\n'
+    + '\n'
+    + '.terminal-cursor.off {\n'
+    + '  visibility: hidden;\n'
     + '}\n';
 
   // var out = '';
@@ -1221,7 +1225,6 @@ Terminal.prototype.refresh = function(start, end) {
     out = '';
 
     if (y === this.y
-        && this.cursorState
         && (this.ydisp === this.ybase || this.selectMode)
         && !this.cursorHidden) {
       x = this.x;
@@ -1244,7 +1247,11 @@ Terminal.prototype.refresh = function(start, end) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor">';
+            if (this.cursorState)
+              var currCssClass = 'terminal-cursor on'
+            else
+              var currCssClass = 'terminal-cursor off'
+            out += '<span class="reverse-video '+currCssClass+'">';
           } else {
             out += '<span style="';
 
