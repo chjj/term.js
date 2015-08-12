@@ -295,26 +295,27 @@ Terminal.prototype.eraseAttr = function() {
  * Colors
  */
 
+// Runnable uses tangoColors
 // Colors 0-15
 Terminal.tangoColors = [
   // dark:
-  'transparent',
-  '#cc0000',
-  '#4e9a06',
-  '#c4a000',
-  '#3465a4',
-  '#75507b',
-  '#06989a',
-  '#d3d7cf',
+  '#000', // black
+  '#df4f3e', // red
+  '#8ae234', // green
+  '#db970d', // yellow
+  '#729fcf', // blue
+  '#ad7fa8', // magenta
+  '#34e2e2', // cyan
+  '#bbb', // light gray
   // bright:
-  '#555753',
-  '#ef2929',
-  '#8ae234',
-  '#db970d',
-  '#729fcf',
-  '#ad7fa8',
-  '#34e2e2',
-  '#eeeeec'
+  '#000', // black
+  '#df4f3e', // red
+  '#91cb58', // green
+  '#c5a200', // yellow
+  '#3465a4', // blue
+  '#ad7fa8', // magenta
+  '#2bd0d0', // cyan
+  '#bbb' // light gray
 ];
 
 Terminal.xtermColors = [
@@ -2726,14 +2727,14 @@ Terminal.prototype.keyPress = function(ev) {
   }
   /*
     anandp:
-    for mac allow paste event propagation 
+    for mac allow paste event propagation
   */
   if (!((key === 118)
     && ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)))) {
     cancel(ev);
   }
 
-  if (!key || ev.ctrlKey 
+  if (!key || ev.ctrlKey
     || (ev.altKey && (key != 118))
     || (ev.metaKey && (key != 118))) return false;
 
