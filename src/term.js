@@ -2572,6 +2572,14 @@ Terminal.prototype.end = function(data) {
   return ret;
 };
 
+Terminal.prototype.resume = function() {
+  ;
+};
+
+Terminal.prototype.pause = function() {
+  ;
+};
+
 // Key Resources:
 // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
 Terminal.prototype.keyDown = function(ev) {
