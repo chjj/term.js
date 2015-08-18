@@ -2758,7 +2758,41 @@ Terminal.prototype.keyDown = function(ev) {
       break;
     default:
       // a-z and space
-      if (ev.ctrlKey) {
+      if (ev.altKey && ev.ctrlKey) {
+        if (ev.keyCode === 55) {
+          // { on a german keyboard under windows or linux
+          key = String.fromCharCode(123);
+        } else if (ev.keyCode === 48) {
+          // } on a german keyboard under windows or linux
+          key = String.fromCharCode(125);
+        } else if (ev.keyCode === 56) {
+          // [ on a german keyboard under windows or linux
+          key = String.fromCharCode(91);
+        } else if (ev.keyCode === 57) {
+          // ] on a german keyboard under windows or linux
+          key = String.fromCharCode(93);
+        } else if (ev.keyCode === 69) {
+          // € on a german keyboard under windows or linux
+          key = String.fromCharCode(8364);
+        } else if (ev.keyCode === 81) {
+          // @ on a german keyboard under windows or linux
+          key = String.fromCharCode(64);
+        } else if (ev.keyCode === 226) {
+          // | on a german keyboard under windows or linux
+          key = String.fromCharCode(124);
+        } else if (ev.keyCode === 187) {
+          // ~ on a german keyboard under windows or linux
+          key = String.fromCharCode(126);
+        } else if (ev.keyCode === 219) {
+          // \ on a german keyboard under windows or linux
+          key = String.fromCharCode(92);
+        }
+      } else if (ev.altKey && ev.shiftKey) {
+        if (ev.keyIdentifier === "U+002F") {
+          // \ on a german mac keyboard
+          key = String.fromCharCode(92);
+        }
+      } else if (ev.ctrlKey) {
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           // Ctrl-A
           if (this.screenKeys) {
@@ -2799,7 +2833,31 @@ Terminal.prototype.keyDown = function(ev) {
           key = String.fromCharCode(29);
         }
       } else if (ev.altKey) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+        if (this.isMac && ev.keyCode === 76) {
+          // @ on a german keyboard under mac
+          key = String.fromCharCode(64);
+        } else if (this.isMac && ev.keyCode === 69) {
+          // € on a german keyboard under mac
+          key = String.fromCharCode(8364);
+        } else if (this.isMac && ev.keyIdentifier === "U+0035") {
+          // [ on a german keyboard under mac
+          key = String.fromCharCode(91);
+        } else if (this.isMac && ev.keyIdentifier === "U+0036") {
+          // ] on a german keyboard under mac
+          key = String.fromCharCode(93);
+        } else if (this.isMac && ev.keyIdentifier === "U+0037") {
+          // | on a german keyboard under mac
+          key = String.fromCharCode(124);
+        } else if (this.isMac && ev.keyIdentifier === "U+0038") {
+          // { on a german keyboard under mac
+          key = String.fromCharCode(123);
+        } else if (this.isMac && ev.keyIdentifier === "U+0039") {
+          // } on a german keyboard under mac
+          key = String.fromCharCode(125);
+        } else if (this.isMac && ev.keyCode === 78) {
+          // ~ on a german keyboard under mac
+          key = String.fromCharCode(126);
+        } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
         } else if (ev.keyCode === 192) {
           key = '\x1b`';
