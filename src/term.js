@@ -5876,14 +5876,12 @@ function indexOf(obj, el) {
 }
 
 function isWide(ch) {
-  if (ch <= '\uff00') return false;
-  return (ch >= '\uff01' && ch <= '\uffbe')
-      || (ch >= '\uffc2' && ch <= '\uffc7')
-      || (ch >= '\uffca' && ch <= '\uffcf')
-      || (ch >= '\uffd2' && ch <= '\uffd7')
-      || (ch >= '\uffda' && ch <= '\uffdc')
-      || (ch >= '\uffe0' && ch <= '\uffe6')
-      || (ch >= '\uffe8' && ch <= '\uffee');
+  if (ch <= '\u3040') return false;
+  return (ch >= '\u3040' && ch <= '\u309f') || // Hiragana
+      (ch >= '\u30A0' && ch <= '\u30ff') || // Katakana
+      (ch >= '\u4E00' && ch <= '\u9FFF') || // CJK Unified ideographs
+      (ch >= '\uF900' && ch <= '\uFAFF') || // CJK Compatibility Ideographs
+      (ch >= '\uFF00' && ch <= '\uFFEF'); //Halfwidth and Fullwidth Forms of Katakana & Fullwidth ASCII variants
 }
 
 function matchColor(r1, g1, b1) {
