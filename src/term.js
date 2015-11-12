@@ -686,7 +686,7 @@ Terminal.prototype.getTextarea = function(document) {
     if (typeof self.select.startPos !== 'undefined'){
       self.select = {};
       self.clearSelectedText();
-      self.refresh(0, this.rows - 1);
+      self.refresh(0, self.rows - 1);
     }
     if (!self.compositionStatus) {
       textarea.value = '';
