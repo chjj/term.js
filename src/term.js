@@ -481,6 +481,11 @@ Terminal.prototype.focus = function() {
   // this.emit('focus');
 
   Terminal.focus = this;
+  
+  if (this.isMobile) {
+      Terminal._textarea.disabled = false;
+      Terminal._textarea.focus();
+  }
 };
 
 Terminal.prototype.blur = function() {
@@ -497,7 +502,9 @@ Terminal.prototype.blur = function() {
   // }
 
   // this.emit('blur');
-
+  if (this.isMobile) {
+      Terminal._textarea.disabled = true;
+  }
   Terminal.focus = null;
 };
 
@@ -521,7 +528,7 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindCopy(document);
 
   if (this.isMobile) {
-    this.fixMobile(document);
+    this.fixMobile(this.parent);
   }
 
   if (this.useStyle) {
@@ -654,20 +661,23 @@ Terminal.bindCopy = function(document) {
 Terminal.prototype.fixMobile = function(document) {
   var self = this;
 
-  var textarea = document.createElement('textarea');
+  var textarea = window.document.createElement('textarea');
   textarea.style.position = 'absolute';
-  textarea.style.left = '-32000px';
-  textarea.style.top = '-32000px';
-  textarea.style.width = '0px';
-  textarea.style.height = '0px';
+  textarea.style.left = '0px';
+  textarea.style.top = '-10000px';
+  textarea.style.width = '1em';
+  textarea.style.height = '1ex';
   textarea.style.opacity = '0';
   textarea.style.backgroundColor = 'transparent';
   textarea.style.borderStyle = 'none';
   textarea.style.outlineStyle = 'none';
   textarea.autocapitalize = 'none';
+  textarea.autocomplete = 'off';
   textarea.autocorrect = 'off';
-
-  document.getElementsByTagName('body')[0].appendChild(textarea);
+  textarea.wrap = 'off';
+  textarea.spellcheck = 'false';
+  
+  document.appendChild(textarea);
 
   Terminal._textarea = textarea;
 
@@ -682,6 +692,15 @@ Terminal.prototype.fixMobile = function(document) {
       textarea.textContent = '';
       self.send(value + '\r');
     });
+    on(textarea, 'input', function() {
+        var value = textarea.value;
+        if(value != ''){
+            textarea.value = '';
+            setTimeout(function(){
+                self.send(value);               
+            },10);
+        }
+      });
   }
 };
 
@@ -2858,7 +2877,7 @@ Terminal.prototype.keyPress = function(ev) {
     return false;
   }
 
-  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+  if (!key) return false;
 
   key = String.fromCharCode(key);
 
