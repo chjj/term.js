@@ -833,7 +833,6 @@ Terminal.prototype.open = function(parent) {
   var updateSelect = function(){
     var startPos = self.select.startPos;
     var endPos = self.select.endPos;
-
     if(endPos.y < startPos.y || (startPos.y == endPos.y && endPos.x < startPos.x)){
       var tmp = startPos;
       startPos = endPos;
@@ -860,14 +859,14 @@ Terminal.prototype.open = function(parent) {
     if (startPos.x === endPos.x && startPos.y === endPos.y){
       self.clearSelectedText();
     }else{
-      var x2 = self.select.endPos.x;
-      var y2 = self.select.endPos.y;
+      var x2 = endPos.x;
+      var y2 = endPos.y;
       x2 --;
       if(x2<0){
         y2--;
         x2 = self.cols - 1;
       }
-      self.selectText(self.select.startPos.x, x2, self.select.startPos.y, y2);
+      self.selectText(startPos.x, x2, startPos.y, y2);
     }
   };
   var copySelectToTextarea = function (){
@@ -5285,8 +5284,6 @@ Terminal.prototype.selectText = function(x1, x2, y1, y2) {
     , attr;
 
   if (this._selected) {
-    y1 = this._selected.y1;
-    x1 = this._selected.x1;
     this.clearSelectedText();
   }
 
@@ -5312,7 +5309,6 @@ Terminal.prototype.selectText = function(x1, x2, y1, y2) {
     x2 = x1;
     x1 = tmp;
   }
-
   for (y = y1; y <= y2; y++) {
     x = 0;
     xl = this.cols - 1;
