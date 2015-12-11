@@ -2901,6 +2901,7 @@
         this.handler(key);
 
         return cancel(ev);
+<<<<<<< HEAD
     };
 
     Terminal.prototype.setgLevel = function (g) {
@@ -2935,6 +2936,107 @@
         key = String.fromCharCode(key);
 
         if (this.prefixMode) {
+=======
+      } else {
+        key = '\x1b[6~';
+      }
+      break;
+    // F1
+    case 112:
+      key = '\x1bOP';
+      break;
+    // F2
+    case 113:
+      key = '\x1bOQ';
+      break;
+    // F3
+    case 114:
+      key = '\x1bOR';
+      break;
+    // F4
+    case 115:
+      key = '\x1bOS';
+      break;
+    // F5
+    case 116:
+      key = '\x1b[15~';
+      break;
+    // F6
+    case 117:
+      key = '\x1b[17~';
+      break;
+    // F7
+    case 118:
+      key = '\x1b[18~';
+      break;
+    // F8
+    case 119:
+      key = '\x1b[19~';
+      break;
+    // F9
+    case 120:
+      key = '\x1b[20~';
+      break;
+    // F10
+    case 121:
+      key = '\x1b[21~';
+      break;
+    // F11
+    case 122:
+      key = '\x1b[23~';
+      break;
+    // F12
+    case 123:
+      key = '\x1b[24~';
+      break;
+    default:
+      // a-z and space
+      if (ev.altKey && ev.ctrlKey) {
+        if (ev.keyCode === 55) {
+          // { on a german keyboard under windows or linux
+          key = String.fromCharCode(123);
+        } else if (ev.keyCode === 48) {
+          // } on a german keyboard under windows or linux
+          key = String.fromCharCode(125);
+        } else if (ev.keyCode === 56) {
+          // [ on a german keyboard under windows or linux
+          key = String.fromCharCode(91);
+        } else if (ev.keyCode === 57) {
+          // ] on a german keyboard under windows or linux
+          key = String.fromCharCode(93);
+        } else if (ev.keyCode === 69) {
+          // € on a german keyboard under windows or linux
+          key = String.fromCharCode(8364);
+        } else if (ev.keyCode === 81) {
+          // @ on a german keyboard under windows or linux
+          key = String.fromCharCode(64);
+        } else if (ev.keyCode === 226) {
+          // | on a german keyboard under windows or linux
+          key = String.fromCharCode(124);
+        } else if (ev.keyCode === 187) {
+          // ~ on a german keyboard under windows or linux
+          key = String.fromCharCode(126);
+        } else if (ev.keyCode === 219) {
+          // \ on a german keyboard under windows or linux
+          key = String.fromCharCode(92);
+        }
+      } else if (ev.altKey && ev.shiftKey) {
+        if (ev.keyIdentifier === "U+002F") {
+          // \ on a german mac keyboard
+          key = String.fromCharCode(92);
+        }
+      } else if (ev.ctrlKey) {
+        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          // Ctrl-A
+          if (this.screenKeys) {
+            if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
+              this.enterPrefix();
+              return cancel(ev);
+            }
+          }
+          // Ctrl-V
+          if (this.prefixMode && ev.keyCode === 86) {
+>>>>>>> 984bcca1817b8166a166b5e0f256c66e4fa6c230
             this.leavePrefix();
             this.keyPrefix(ev, key);
             return false;
@@ -3012,6 +3114,7 @@
                     this.lines[i].push(ch);
                 }
             }
+<<<<<<< HEAD
         } else if (j > x) {
             i = this.lines.length;
             while (i--) {
@@ -3117,6 +3220,298 @@
             ? this.cols - 1
             : x < 0 ? 0 : x;
     };
+=======
+            return;
+          }
+          key = String.fromCharCode(ev.keyCode - 64);
+        } else if (ev.keyCode === 32) {
+          // NUL
+          key = String.fromCharCode(0);
+        } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
+          // escape, file sep, group sep, record sep, unit sep
+          key = String.fromCharCode(ev.keyCode - 51 + 27);
+        } else if (ev.keyCode === 56) {
+          // delete
+          key = String.fromCharCode(127);
+        } else if (ev.keyCode === 219) {
+          // ^[ - escape
+          key = String.fromCharCode(27);
+        } else if (ev.keyCode === 221) {
+          // ^] - group sep
+          key = String.fromCharCode(29);
+        }
+      } else if (ev.altKey) {
+        if (this.isMac && ev.keyCode === 76) {
+          // @ on a german keyboard under mac
+          key = String.fromCharCode(64);
+        } else if (this.isMac && ev.keyCode === 69) {
+          // € on a german keyboard under mac
+          key = String.fromCharCode(8364);
+        } else if (this.isMac && ev.keyIdentifier === "U+0035") {
+          // [ on a german keyboard under mac
+          key = String.fromCharCode(91);
+        } else if (this.isMac && ev.keyIdentifier === "U+0036") {
+          // ] on a german keyboard under mac
+          key = String.fromCharCode(93);
+        } else if (this.isMac && ev.keyIdentifier === "U+0037") {
+          // | on a german keyboard under mac
+          key = String.fromCharCode(124);
+        } else if (this.isMac && ev.keyIdentifier === "U+0038") {
+          // { on a german keyboard under mac
+          key = String.fromCharCode(123);
+        } else if (this.isMac && ev.keyIdentifier === "U+0039") {
+          // } on a german keyboard under mac
+          key = String.fromCharCode(125);
+        } else if (this.isMac && ev.keyCode === 78) {
+          // ~ on a german keyboard under mac
+          key = String.fromCharCode(126);
+        } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+        } else if (ev.keyCode === 192) {
+          key = '\x1b`';
+        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
+          key = '\x1b' + (ev.keyCode - 48);
+        }
+      }
+      break;
+  }
+
+  if (!key) return true;
+
+  if (this.prefixMode) {
+    this.leavePrefix();
+    return cancel(ev);
+  }
+
+  if (this.selectMode) {
+    this.keySelect(ev, key);
+    return cancel(ev);
+  }
+
+  this.emit('keydown', ev);
+  this.emit('key', key, ev);
+
+  this.showCursor();
+  this.handler(key);
+
+  return cancel(ev);
+};
+
+Terminal.prototype.setgLevel = function(g) {
+  this.glevel = g;
+  this.charset = this.charsets[g];
+};
+
+Terminal.prototype.setgCharset = function(g, charset) {
+  this.charsets[g] = charset;
+  if (this.glevel === g) {
+    this.charset = charset;
+  }
+};
+
+Terminal.prototype.keyPress = function(ev) {
+  var key;
+
+  cancel(ev);
+
+  if (ev.charCode) {
+    key = ev.charCode;
+  } else if (ev.which == null) {
+    key = ev.keyCode;
+  } else if (ev.which !== 0 && ev.charCode !== 0) {
+    key = ev.which;
+  } else {
+    return false;
+  }
+
+  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+
+  key = String.fromCharCode(key);
+
+  if (this.prefixMode) {
+    this.leavePrefix();
+    this.keyPrefix(ev, key);
+    return false;
+  }
+
+  if (this.selectMode) {
+    this.keySelect(ev, key);
+    return false;
+  }
+
+  this.emit('keypress', key, ev);
+  this.emit('key', key, ev);
+
+  this.showCursor();
+  this.handler(key);
+
+  return false;
+};
+
+Terminal.prototype.send = function(data) {
+  var self = this;
+
+  if (!this.queue) {
+    setTimeout(function() {
+      self.handler(self.queue);
+      self.queue = '';
+    }, 1);
+  }
+
+  this.queue += data;
+};
+
+Terminal.prototype.bell = function() {
+  this.emit('bell');
+  if (!this.visualBell) return;
+  var self = this;
+  this.element.style.borderColor = 'white';
+  setTimeout(function() {
+    self.element.style.borderColor = '';
+  }, 10);
+  if (this.popOnBell) this.focus();
+};
+
+Terminal.prototype.log = function() {
+  if (!this.debug) return;
+  if (!this.context.console || !this.context.console.log) return;
+  var args = Array.prototype.slice.call(arguments);
+  this.context.console.log.apply(this.context.console, args);
+};
+
+Terminal.prototype.error = function() {
+  if (!this.debug) return;
+  if (!this.context.console || !this.context.console.error) return;
+  var args = Array.prototype.slice.call(arguments);
+  this.context.console.error.apply(this.context.console, args);
+};
+
+Terminal.prototype.resize = function(x, y) {
+  var line
+    , el
+    , i
+    , j
+    , ch;
+
+  if (x < 1) x = 1;
+  if (y < 1) y = 1;
+
+  // resize cols
+  j = this.cols;
+  if (j < x) {
+    ch = [this.defAttr, ' ']; // does xterm use the default attr?
+    i = this.lines.length;
+    while (i--) {
+      while (this.lines[i].length < x) {
+        this.lines[i].push(ch);
+      }
+    }
+  } else if (j > x) {
+    i = this.lines.length;
+    while (i--) {
+      while (this.lines[i].length > x) {
+        this.lines[i].pop();
+      }
+    }
+  }
+  this.setupStops(j);
+  this.cols = x;
+  this.columns = x;
+
+  // resize rows
+  j = this.rows;
+  if (j < y) {
+    el = this.element;
+    while (j++ < y) {
+      if (this.lines.length < y + this.ybase) {
+        this.lines.push(this.blankLine());
+      }
+      if (this.children.length < y) {
+        line = this.document.createElement('div');
+        el.appendChild(line);
+        this.children.push(line);
+      }
+    }
+  } else if (j > y) {
+    while (j-- > y) {
+      if (this.lines.length > y + this.ybase) {
+        this.lines.pop();
+      }
+      if (this.children.length > y) {
+        el = this.children.pop();
+        if (!el) continue;
+        el.parentNode.removeChild(el);
+      }
+    }
+  }
+  this.rows = y;
+
+  // make sure the cursor stays on screen
+  if (this.y >= y) this.y = y - 1;
+  if (this.x >= x) this.x = x - 1;
+
+  this.scrollTop = 0;
+  this.scrollBottom = y - 1;
+
+  this.refresh(0, this.rows - 1);
+
+  // it's a real nightmare trying
+  // to resize the original
+  // screen buffer. just set it
+  // to null for now.
+  this.normal = null;
+
+  // Act as though we are a node TTY stream:
+  this.emit('resize');
+};
+
+Terminal.prototype.updateRange = function(y) {
+  if (y < this.refreshStart) this.refreshStart = y;
+  if (y > this.refreshEnd) this.refreshEnd = y;
+  // if (y > this.refreshEnd) {
+  //   this.refreshEnd = y;
+  //   if (y > this.rows - 1) {
+  //     this.refreshEnd = this.rows - 1;
+  //   }
+  // }
+};
+
+Terminal.prototype.maxRange = function() {
+  this.refreshStart = 0;
+  this.refreshEnd = this.rows - 1;
+};
+
+Terminal.prototype.setupStops = function(i) {
+  if (i != null) {
+    if (!this.tabs[i]) {
+      i = this.prevStop(i);
+    }
+  } else {
+    this.tabs = {};
+    i = 0;
+  }
+
+  for (; i < this.cols; i += 8) {
+    this.tabs[i] = true;
+  }
+};
+
+Terminal.prototype.prevStop = function(x) {
+  if (x == null) x = this.x;
+  while (!this.tabs[--x] && x > 0);
+  return x >= this.cols
+    ? this.cols - 1
+    : x < 0 ? 0 : x;
+};
+
+Terminal.prototype.nextStop = function(x) {
+  if (x == null) x = this.x;
+  while (!this.tabs[++x] && x < this.cols);
+  return x >= this.cols
+    ? this.cols - 1
+    : x < 0 ? 0 : x;
+};
+>>>>>>> 984bcca1817b8166a166b5e0f256c66e4fa6c230
 
 // back_color_erase feature for xterm.
     Terminal.prototype.eraseAttr = function () {
