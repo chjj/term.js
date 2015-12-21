@@ -1,7 +1,7 @@
 {
   "name": "term.js",
   "description": "A terminal written in javascript",
-  "version": "0.0.3",
+  "version": "0.0.7",
   "main": "./src/term.js",
   "dependencies": {
   },
