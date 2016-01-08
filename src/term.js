@@ -2615,6 +2615,10 @@ Terminal.prototype.keyDown = function(ev) {
     case 27:
       key = '\x1b';
       break;
+    // space
+    case 32:
+      key = '\x20';
+      break;
     // left-arrow
     case 37:
       if (this.applicationCursor) {
