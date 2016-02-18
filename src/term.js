@@ -1395,7 +1395,7 @@ Terminal.prototype.refresh = function(start, end) {
           break;
         default:
           if (ch <= ' ') {
-            out += '&nbsp;';
+            out += ' ';
           } else {
             if (isWide(ch)) i++;
             out += ch;
@@ -2614,10 +2614,6 @@ Terminal.prototype.keyDown = function(ev) {
     // escape
     case 27:
       key = '\x1b';
-      break;
-    // space
-    case 32:
-      key = '\x20';
       break;
     // left-arrow
     case 37:
