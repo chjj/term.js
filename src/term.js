@@ -715,18 +715,22 @@ Terminal.insertStyle = function(document, bg, fg) {
     + '  background: ' + fg + ';\n'
     + '}\n';
 
-  // var out = '';
-  // each(Terminal.colors, function(color, i) {
-  //   if (i === 256) {
-  //     out += '\n.term-bg-color-default { background-color: ' + color + '; }';
-  //   }
-  //   if (i === 257) {
-  //     out += '\n.term-fg-color-default { color: ' + color + '; }';
-  //   }
-  //   out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
-  //   out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
-  // });
-  // style.innerHTML += out + '\n';
+  var out = '';
+  each(Terminal.colors, function(color, i) {
+    if (i === 256) {
+      out += '\n.term-bg-color-default { background-color: ' + color + '; }';
+    }
+    if (i === 257) {
+      out += '\n.term-fg-color-default { color: ' + color + '; }';
+    }
+    out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
+    out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
+  });
+  out += '\n.term-bold { font-weight: bold; }'
+  out += '\n.term-underline { text-decoration: underline; }'
+  out += '\n.term-blink { text-decoration: blink; }'
+  out += '\n.term-hidden { visibility: hidden; }'
+  style.innerHTML += out + '\n';
 
   head.insertBefore(style, head.firstChild);
 };
@@ -1315,8 +1319,12 @@ Terminal.prototype.refresh = function(start, end) {
         if (data !== this.defAttr) {
           if (data === -1) {
             out += '<span class="reverse-video terminal-cursor">';
-          } else {
-            out += '<span style="';
+	  } else {
+            if (this.useStyle) {
+	      out += '<span class="';
+	    } else {
+              out += '<span style="';
+            }
 
             bg = data & 0x1ff;
             fg = (data >> 9) & 0x1ff;
@@ -1325,7 +1333,11 @@ Terminal.prototype.refresh = function(start, end) {
             // bold
             if (flags & 1) {
               if (!Terminal.brokenBold) {
-                out += 'font-weight:bold;';
+	        if (this.useStyle) {
+		  out += 'term-bold '
+                } else {
+                  out += 'font-weight:bold;';
+                }
               }
               // See: XTerm*boldColors
               if (fg < 8) fg += 8;
@@ -1333,16 +1345,24 @@ Terminal.prototype.refresh = function(start, end) {
 
             // underline
             if (flags & 2) {
-              out += 'text-decoration:underline;';
+              if (this.useStyle) {
+                out += 'term-underline ';
+	      } else {
+                out += 'text-decoration:underline;';
+              }
             }
 
             // blink
             if (flags & 4) {
-              if (flags & 2) {
-                out = out.slice(0, -1);
-                out += ' blink;';
+              if (this.useStyle) {
+                out += 'term-blink ';
               } else {
-                out += 'text-decoration:blink;';
+                if (flags & 2) {
+                  out = out.slice(0, -1);
+                  out += ' blink;';
+                } else {
+                  out += 'text-decoration:blink;';
+                }
               }
             }
 
@@ -1357,25 +1377,27 @@ Terminal.prototype.refresh = function(start, end) {
 
             // invisible
             if (flags & 16) {
-              out += 'visibility:hidden;';
+              if (this.useStyle) {
+                out += 'term-hidden ';
+              } else {
+                out += 'visibility:hidden;';
+              }
             }
 
-            // out += '" class="'
-            //   + 'term-bg-color-' + bg
-            //   + ' '
-            //   + 'term-fg-color-' + fg
-            //   + '">';
-
             if (bg !== 256) {
-              out += 'background-color:'
-                + this.colors[bg]
-                + ';';
+              if (this.useStyle) {
+                out += 'term-bg-color-' + bg + ' ';
+              } else {
+                out += 'background-color:' + this.colors[bg] + ';';
+              }
             }
 
             if (fg !== 257) {
-              out += 'color:'
-                + this.colors[fg]
-                + ';';
+              if (this.useStyle) {
+                out += 'term-fg-color-' + fg + ' ';
+              } else {
+                out += 'color:' + this.colors[fg] + ';';
+              }
             }
 
             out += '">';
