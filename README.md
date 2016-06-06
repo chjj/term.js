@@ -3,6 +3,8 @@
 A full xterm clone written in javascript. Used by
 [**tty.js**](https://github.com/chjj/tty.js).
 
+**⚠️ This project is no longer maintained ⚠️. For a maintained fork take a look at [sourcelair/xterm.js](https://github.com/sourcelair/xterm.js).**
+
 ## Example
 
 Server:
