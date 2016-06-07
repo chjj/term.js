@@ -1557,6 +1557,9 @@ Terminal.prototype.write = function(data) {
           case '\x08':
             if (this.x > 0) {
               this.x--;
+            } else {
+              this.x = this.cols;
+              this.y--;
             }
             break;
 
