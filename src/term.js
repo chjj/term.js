@@ -2292,19 +2292,19 @@ Terminal.prototype.write = function(data) {
           // CSI Pt; Pl; Pb; Pr; Ps$ t
           // CSI > Ps; Ps t
           // CSI Ps SP t
-          // case 't':
-          //   if (this.postfix === '$') {
-          //     this.reverseAttrInRectangle(this.params);
-          //   } else if (this.postfix === ' ') {
-          //     this.setWarningBellVolume(this.params);
-          //   } else {
-          //     if (this.prefix === '>') {
-          //       this.setTitleModeFeature(this.params);
-          //     } else {
-          //       this.manipulateWindow(this.params);
-          //     }
-          //   }
-          //   break;
+          case 't':
+            if (this.postfix === '$') {
+              this.reverseAttrInRectangle(this.params);
+            } else if (this.postfix === ' ') {
+              this.setWarningBellVolume(this.params);
+            } else {
+              if (this.prefix === '>') {
+                this.setTitleModeFeature(this.params);
+              } else {
+                this.manipulateWindow(this.params);
+              }
+            }
+            break;
 
           // CSI u     Restore cursor (ANSI.SYS).
           // CSI Ps SP u
@@ -4544,7 +4544,11 @@ Terminal.prototype.savePrivateValues = function(params) {
 //     Ps = 2 3  ;  2  -> Restore xterm window title from stack.
 //     Ps >= 2 4  -> Resize to Ps lines (DECSLPP).
 Terminal.prototype.manipulateWindow = function(params) {
-  ;
+  switch (params[0]) {
+    case 8:
+      this.resize(this.params[2], this.params[1]);
+      break;
+  }
 };
 
 // CSI Pt; Pl; Pb; Pr; Ps$ t
