@@ -5,6 +5,7 @@
   "version": "0.0.7",
   "license": "MIT",
   "main": "./index.js",
+  "browser": "./src/term.js",
   "preferGlobal": false,
   "repository": "git://github.com/chjj/term.js.git",
   "homepage": "https://github.com/chjj/term.js",
