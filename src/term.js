@@ -1410,7 +1410,22 @@ Terminal.prototype.refresh = function(start, end) {
       out += '</span>';
     }
 
-    this.children[y].innerHTML = out;
+    // Removing trailing spaces from end of lines.
+    // Leaving out one space on empty lines.
+    var space = '&nbsp;';
+    var spaceCount = 0;
+    for (var i = out.length - space.length; i >= 0; i = i - space.length) {
+      if(out.slice(i, i + space.length) === space) {
+        spaceCount++;
+      } else {
+        break;
+      }
+    }
+    var newOut = out.slice(0, out.length - spaceCount * space.length);
+    if (newOut.length === 0) {
+      newOut = '&nbsp;';
+    }
+    this.children[y].innerHTML = newOut;
   }
 
   if (parent) parent.appendChild(this.element);
