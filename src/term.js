@@ -248,6 +248,8 @@ function Terminal(options) {
   this.x = 0;
   this.y = 0;
   this.cursorState = 0;
+  this.cursorShape = 'block';
+  this.cursorBlink = true;
   this.cursorHidden = false;
   this.convertEol;
   this.state = 0;
@@ -1314,7 +1316,7 @@ Terminal.prototype.refresh = function(start, end) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor">';
+            out += '<span class="reverse-video terminal-cursor cursor-' + this.cursorShape + '">';
           } else {
             out += '<span style="';
 
@@ -1438,7 +1440,14 @@ Terminal.prototype.startBlink = function() {
   this._blinker = function() {
     self._cursorBlink();
   };
+  if (this._blink) this.stopBlink();
   this._blink = setInterval(this._blinker, 500);
+};
+
+Terminal.prototype.stopBlink = function() {
+  if (!this._blink) return;
+  clearInterval(this._blink);
+  this._blink = null;
 };
 
 Terminal.prototype.refreshBlink = function() {
@@ -2251,17 +2260,17 @@ Terminal.prototype.write = function(data) {
           // CSI Ps q  Load LEDs (DECLL).
           // CSI Ps SP q
           // CSI Ps " q
-          // case 'q':
-          //   if (this.postfix === ' ') {
-          //     this.setCursorStyle(this.params);
-          //     break;
-          //   }
-          //   if (this.postfix === '"') {
-          //     this.setCharProtectionAttr(this.params);
-          //     break;
-          //   }
-          //   this.loadLEDs(this.params);
-          //   break;
+          case 'q':
+            if (this.postfix === ' ') {
+              this.setCursorStyle(this.params);
+              break;
+            }
+            //if (this.postfix === '"') {
+              //this.setCharProtectionAttr(this.params);
+              //break;
+            //}
+            //this.loadLEDs(this.params);
+            break;
 
           // CSI Ps ; Ps r
           //   Set Scrolling Region [top;bottom] (default = full size of win-
@@ -4436,14 +4445,30 @@ Terminal.prototype.loadLEDs = function(params) {
 };
 
 // CSI Ps SP q
-//   Set cursor style (DECSCUSR, VT520).
-//     Ps = 0  -> blinking block.
-//     Ps = 1  -> blinking block (default).
-//     Ps = 2  -> steady block.
-//     Ps = 3  -> blinking underline.
-//     Ps = 4  -> steady underline.
+//   Set cursor style (DECSCUSR, VT510).
+//     Ps = 0 -> blinking block (default)
+//     Ps = 1 -> blinking block
+//     Ps = 2 -> steady block
+//     Ps = 3 -> blinking underline
+//     Ps = 4 -> steady underline
+//     Ps = 5 -> blinking beam
+//     Ps = 6 -> steady beam
 Terminal.prototype.setCursorStyle = function(params) {
-  ;
+  var q = params[0];
+  if (q == 0 || q == 1 || q == 2)
+    this.cursorShape = 'block'
+  else if (q == 3 || q == 4)
+    this.cursorShape = 'underline'
+  else if (q == 5 || q == 6)
+    this.cursorShape = 'beam'
+
+  if (q == 0 || q == 1 || q == 3 || q == 5) {
+    this.options.cursorBlink = true;
+    this.startBlink()
+  } else {
+    this.options.cursorBlink = false;
+    this.stopBlink()
+  }
 };
 
 // CSI Ps " q
