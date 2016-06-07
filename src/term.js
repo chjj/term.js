@@ -481,6 +481,11 @@ Terminal.prototype.focus = function() {
   // this.emit('focus');
 
   Terminal.focus = this;
+  
+  if (this.isMobile) {
+      Terminal._textarea.disabled = false;
+      Terminal._textarea.focus();
+  }
 };
 
 Terminal.prototype.blur = function() {
@@ -497,7 +502,9 @@ Terminal.prototype.blur = function() {
   // }
 
   // this.emit('blur');
-
+  if (this.isMobile) {
+      Terminal._textarea.disabled = true;
+  }
   Terminal.focus = null;
 };
 
@@ -521,7 +528,7 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindCopy(document);
 
   if (this.isMobile) {
-    this.fixMobile(document);
+    this.fixMobile(this.parent);
   }
 
   if (this.useStyle) {
@@ -654,33 +661,85 @@ Terminal.bindCopy = function(document) {
 Terminal.prototype.fixMobile = function(document) {
   var self = this;
 
-  var textarea = document.createElement('textarea');
-  textarea.style.position = 'absolute';
-  textarea.style.left = '-32000px';
-  textarea.style.top = '-32000px';
-  textarea.style.width = '0px';
-  textarea.style.height = '0px';
-  textarea.style.opacity = '0';
-  textarea.style.backgroundColor = 'transparent';
-  textarea.style.borderStyle = 'none';
-  textarea.style.outlineStyle = 'none';
-  textarea.autocapitalize = 'none';
-  textarea.autocorrect = 'off';
+  var inputElement = window.document.createElement('input');
+  inputElement.style.position = 'absolute';
+  inputElement.style.left = '0px';
+  inputElement.style.top = '-10000px';
+  inputElement.style.width = '1em';
+  inputElement.style.height = '1ex';
+  inputElement.style.opacity = '0';
+  inputElement.style.backgroundColor = 'transparent';
+  inputElement.style.borderStyle = 'none';
+  inputElement.style.outlineStyle = 'none';
+  inputElement.autocapitalize = 'off';
+  inputElement.autocomplete = 'off';
+  inputElement.autocorrect = 'off';
+  inputElement.wrap = 'off';
+  inputElement.spellcheck = 'false';
+  
+  document.appendChild(inputElement);
 
-  document.getElementsByTagName('body')[0].appendChild(textarea);
-
-  Terminal._textarea = textarea;
+  Terminal._textarea =  inputElement;
 
   setTimeout(function() {
-    textarea.focus();
-  }, 1000);
-
-  if (this.isAndroid) {
-    on(textarea, 'change', function() {
-      var value = textarea.textContent || textarea.value;
-      textarea.value = '';
-      textarea.textContent = '';
-      self.send(value + '\r');
+    inputElement.focus();
+  }, 200);
+  var resetValue = "_________________________________________________________";
+  var lastValue = resetValue;
+  function readInput(){
+      var value = inputElement.value;
+      if(value == lastValue && value == resetValue) {
+          return;
+      }
+      var l = Math.min(value.length,lastValue.length);
+      var mod = 0;
+      for ( mod = 0; mod < l ; mod++){
+          if (value.charAt(i) != lastValue.charAt(i)){
+              break;
+          } 
+      }
+      for ( var i = lastValue.length-1; i >= value.length ; i--){
+          self.send('\x7f'); // Backspace
+      }
+      for ( var i = mod; i < value.length ; i++){
+          self.send(value.charAt(i)); 
+      }
+      lastValue = value;
+      if(value.length > 500 || value.length == 0) {
+          inputElement.blur();
+          setTimeout(function() {
+              inputElement.focus();
+              inputElement.value = resetValue;
+              lastValue = resetValue;
+              try { inputElement.setSelectionRange(resetValue.length, resetValue.length); }
+              catch (err) {}
+          }, 10);
+      }
+  }
+  function resetInput(){
+      inputElement.value = resetValue;
+      lastValue = resetValue;
+      inputElement.focus();
+      try { inputElement.setSelectionRange(resetValue.length, resetValue.length); }
+      catch (err) {}      
+  }
+  if (this.isAndroid && this.isFirefox) {
+    resetInput();
+    on(inputElement, 'change', function() {
+        readInput();
+    });
+    on(inputElement, 'input', function(e) {
+        console.log(e.isComposing + ' ' + inputElement.value);
+        readInput();
+    });
+    on(inputElement, 'keydown', function(e) {
+        
+        if(!(e.which <= 64 || (e.which >= 91 && e.which <= 95) || (e.which >= 123 && e.which <= 126) )) {
+            self.send('\x7f'); // Backspace
+        }
+    },true);
+    on(inputElement, 'focus', function() {
+        resetInput();
     });
   }
 };
@@ -757,6 +816,7 @@ Terminal.prototype.open = function(parent) {
     this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
     this.isIphone = !!~this.context.navigator.userAgent.indexOf('iPhone');
     this.isAndroid = !!~this.context.navigator.userAgent.indexOf('Android');
+    this.isFirefox = !!~this.context.navigator.userAgent.indexOf('Firefox');
     this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
   }
@@ -1450,7 +1510,7 @@ Terminal.prototype.refreshBlink = function() {
 Terminal.prototype.scroll = function() {
   var row;
 
-  if (++this.ybase === this.scrollback) {
+  if (++this.ybase >= this.scrollback) {
     this.ybase = this.ybase / 2 | 0;
     this.lines = this.lines.slice(-(this.ybase + this.rows) + 1);
   }
@@ -2862,7 +2922,7 @@ Terminal.prototype.keyPress = function(ev) {
     return false;
   }
 
-  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+  if (!key) return false;
 
   key = String.fromCharCode(key);
 
