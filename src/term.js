@@ -463,20 +463,17 @@ each(keys(Terminal.defaults), function(key) {
 Terminal.focus = null;
 
 Terminal.prototype.focus = function() {
-  if (Terminal.focus === this) return;
+    if (Terminal.focus === this) {
+        this.element.focus();
+        return;
+    }
 
   if (Terminal.focus) {
-    Terminal.focus.blur();
+      Terminal.focus.blur();
   }
 
   if (this.sendFocus) this.send('\x1b[I');
   this.showCursor();
-
-  // try {
-  //   this.element.focus();
-  // } catch (e) {
-  //   ;
-  // }
 
   // this.emit('focus');
 
@@ -514,12 +511,6 @@ Terminal.prototype.initGlobal = function() {
   }
   Terminal._boundDocs.push(document);
 
-  Terminal.bindPaste(document);
-
-  Terminal.bindKeys(document);
-
-  Terminal.bindCopy(document);
-
   if (this.isMobile) {
     this.fixMobile(document);
   }
@@ -530,35 +521,14 @@ Terminal.prototype.initGlobal = function() {
 };
 
 /**
- * Bind to paste event
- */
-
-Terminal.bindPaste = function(document) {
-  // This seems to work well for ctrl-V and middle-click,
-  // even without the contentEditable workaround.
-  var window = document.defaultView;
-  on(window, 'paste', function(ev) {
-    var term = Terminal.focus;
-    if (!term) return;
-    if (ev.clipboardData) {
-      term.send(ev.clipboardData.getData('text/plain'));
-    } else if (term.context.clipboardData) {
-      term.send(term.context.clipboardData.getData('Text'));
-    }
-    // Not necessary. Do it anyway for good measure.
-    term.element.contentEditable = 'inherit';
-    return cancel(ev);
-  });
-};
-
-/**
  * Global Events for key handling
  */
 
-Terminal.bindKeys = function(document) {
+Terminal.prototype.bindKeys = function() {
   // We should only need to check `target === body` below,
-  // but we can check everything for good measure.
-  on(document, 'keydown', function(ev) {
+    // but we can check everything for good measure.
+    var el = this.element;
+    on(el, 'keydown', function (ev) {
     if (!Terminal.focus) return;
     var target = ev.target || ev.srcElement;
     if (!target) return;
@@ -570,9 +540,9 @@ Terminal.bindKeys = function(document) {
         || target === Terminal.focus.parent) {
       return Terminal.focus.keyDown(ev);
     }
-  }, true);
+  });
 
-  on(document, 'keypress', function(ev) {
+    on(el, 'keypress', function (ev) {
     if (!Terminal.focus) return;
     var target = ev.target || ev.srcElement;
     if (!target) return;
@@ -584,67 +554,9 @@ Terminal.bindKeys = function(document) {
         || target === Terminal.focus.parent) {
       return Terminal.focus.keyPress(ev);
     }
-  }, true);
-
-  // If we click somewhere other than a
-  // terminal, unfocus the terminal.
-  on(document, 'mousedown', function(ev) {
-    if (!Terminal.focus) return;
-
-    var el = ev.target || ev.srcElement;
-    if (!el) return;
-
-    do {
-      if (el === Terminal.focus.element) return;
-    } while (el = el.parentNode);
-
-    Terminal.focus.blur();
   });
-};
 
-/**
- * Copy Selection w/ Ctrl-C (Select Mode)
- */
-
-Terminal.bindCopy = function(document) {
-  var window = document.defaultView;
-
-  // if (!('onbeforecopy' in document)) {
-  //   // Copies to *only* the clipboard.
-  //   on(window, 'copy', function fn(ev) {
-  //     var term = Terminal.focus;
-  //     if (!term) return;
-  //     if (!term._selected) return;
-  //     var text = term.grabText(
-  //       term._selected.x1, term._selected.x2,
-  //       term._selected.y1, term._selected.y2);
-  //     term.emit('copy', text);
-  //     ev.clipboardData.setData('text/plain', text);
-  //   });
-  //   return;
-  // }
-
-  // Copies to primary selection *and* clipboard.
-  // NOTE: This may work better on capture phase,
-  // or using the `beforecopy` event.
-  on(window, 'copy', function(ev) {
-    var term = Terminal.focus;
-    if (!term) return;
-    if (!term._selected) return;
-    var textarea = term.getCopyTextarea();
-    var text = term.grabText(
-      term._selected.x1, term._selected.x2,
-      term._selected.y1, term._selected.y2);
-    term.emit('copy', text);
-    textarea.focus();
-    textarea.textContent = text;
-    textarea.value = text;
-    textarea.setSelectionRange(0, text.length);
-    setTimeout(function() {
-      term.element.focus();
-      term.focus();
-    }, 1);
-  });
+  
 };
 
 /**
@@ -759,13 +671,15 @@ Terminal.prototype.open = function(parent) {
     this.isAndroid = !!~this.context.navigator.userAgent.indexOf('Android');
     this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
+    this.isMSIE = this.isMSIE || !!~this.context.navigator.userAgent.indexOf('Trident');
   }
 
   // Create our main terminal element.
-  this.element = this.document.createElement('div');
+  this.element = this.document.createElement('x-screen');
   this.element.className = 'terminal';
   this.element.style.outline = 'none';
   this.element.setAttribute('tabindex', 0);
+  this.element.setAttribute('role', 'textbox');
   this.element.setAttribute('spellcheck', 'false');
   this.element.style.backgroundColor = this.colors[256];
   this.element.style.color = this.colors[257];
@@ -788,6 +702,8 @@ Terminal.prototype.open = function(parent) {
     this.initGlobal();
   }
 
+  this.bindKeys();
+
   if (!('useFocus' in this.options) || this.options.useFocus) {
     // Ensure there is a Terminal.focus.
     this.focus();
@@ -807,35 +723,8 @@ Terminal.prototype.open = function(parent) {
     // This causes slightly funky behavior.
     // on(this.element, 'blur', function() {
     //   self.blur();
-    // });
-
-    on(this.element, 'mousedown', function() {
-      self.focus();
-    });
-
-    // Clickable paste workaround, using contentEditable.
-    // This probably shouldn't work,
-    // ... but it does. Firefox's paste
-    // event seems to only work for textareas?
-    on(this.element, 'mousedown', function(ev) {
-      var button = ev.button != null
-        ? +ev.button
-        : ev.which != null
-          ? ev.which - 1
-          : null;
-
-      // Does IE9 do this?
-      if (self.isMSIE) {
-        button = button === 1 ? 0 : button === 4 ? 1 : button;
-      }
-
-      if (button !== 2) return;
-
-      self.element.contentEditable = 'true';
-      setTimeout(function() {
-        self.element.contentEditable = 'inherit'; // 'false';
-      }, 1);
-    }, true);
+      // });
+    
   }
 
   if (!('useMouse' in this.options) || this.options.useMouse) {
@@ -845,14 +734,6 @@ Terminal.prototype.open = function(parent) {
   }
 
   // this.emit('open');
-
-  if (!('useFocus' in this.options) || this.options.useFocus) {
-      // This can be useful for pasting,
-      // as well as the iPad fix.
-      setTimeout(function() {
-        self.element.focus();
-      }, 100);
-  }
 
   // Figure out whether boldness affects
   // the character width of monospace fonts.
@@ -1071,9 +952,15 @@ Terminal.prototype.bindMouse = function() {
           : 65;
         break;
       case 'mousewheel':
-        button = ev.wheelDeltaY > 0
-          ? 64
-          : 65;
+          if (self.isMSIE) {
+              button = ev.wheelDelta > 0
+                    ? 64
+                    : 65;
+          } else {
+              button = ev.wheelDeltaY > 0
+                ? 64
+                : 65;
+          }
         break;
     }
 
@@ -1146,14 +1033,68 @@ Terminal.prototype.bindMouse = function() {
     };
   }
 
-  on(el, 'mousedown', function(ev) {
+    // If we click somewhere other than a
+    // terminal, unfocus the terminal.
+  on(document, 'mousedown', function (ev) {
+      if (!Terminal.focus) return;
+
+      var el = ev.target || ev.srcElement;
+      if (!el) return;
+
+      do {
+          if (el === Terminal.focus.element) return;
+      } while (el = el.parentNode);
+
+      Terminal.focus.blur();
+  });
+
+  on(el, 'mouseup', function (ev) {
+      if (ev.button === 0) {
+          if (self.copyStartPos) {
+              var copyEndPos = getCoords(ev);
+              copyEndPos.x = copyEndPos.x - 32 - 1;
+              copyEndPos.y = copyEndPos.y - 32 - 1;
+              if (copyEndPos.x == self.copyStartPos.x
+                  && copyEndPos.y == self.copyStartPos.y) {
+                  if (self.mouseSelectionMode) {
+                      self.leaveMouseSelection();
+                  }
+                  return;
+              } else {
+                  self._selected = { x1: self.copyStartPos.x, x2: copyEndPos.x, y1: self.copyStartPos.y + self.ydisp, y2: copyEndPos.y + self.ydisp };
+                  var text = self.grabText(self._selected.x1, self._selected.x2, self._selected.y1 , self._selected.y2 );
+                  self.selectText(self._selected.x1, self._selected.x2, self._selected.y1 , self._selected.y2 );
+                  self.copyText(text);
+                  try {
+                      var copyResult = document.execCommand('copy');
+                  } catch (firefoxException) {
+                  }
+              }
+          }
+      }
+  })
+
+  on(el, 'mousedown', function (ev) {
+    // ensure focus
+    //self.element.focus();
+    self.focus();
+    if (ev.button === 0)
+    {
+        if (self.mouseSelectionMode) {
+            self.leaveMouseSelection();
+        }
+        self.enterMouseSelection();
+
+        self.copyStartPos = null;
+        // handle the copy 
+        self.copyStartPos = getCoords(ev);
+        self.copyStartPos.x = self.copyStartPos.x - 32 - 1;
+        self.copyStartPos.y = self.copyStartPos.y - 32 - 1;
+    }
     if (!self.mouseEvents) return;
 
     // send the button
     sendButton(ev);
-
-    // ensure focus
-    self.focus();
 
     // fix for odd bug
     //if (self.vt200Mouse && !self.normalMouse) {
@@ -1200,7 +1141,11 @@ Terminal.prototype.bindMouse = function() {
     if (ev.type === 'DOMMouseScroll') {
       self.scrollDisp(ev.detail < 0 ? -5 : 5);
     } else {
-      self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
+        if (self.isMSIE) {
+            self.scrollDisp(ev.wheelDelta > 0 ? -5 : 5);
+        } else {
+            self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
+        }
     }
     return cancel(ev);
   });
@@ -1255,7 +1200,7 @@ Terminal.prototype.destroy = function() {
 // Next 14 bits: a mask for misc. flags:
 //   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
 
-Terminal.prototype.refresh = function(start, end) {
+Terminal.prototype.refresh = function (start, end) {
   var x
     , y
     , i
@@ -1414,6 +1359,7 @@ Terminal.prototype.refresh = function(start, end) {
   }
 
   if (parent) parent.appendChild(this.element);
+  this.focus();
 };
 
 Terminal.prototype._cursorBlink = function() {
@@ -1499,7 +1445,10 @@ Terminal.prototype.scrollDisp = function(disp) {
   this.refresh(0, this.rows - 1);
 };
 
-Terminal.prototype.write = function(data) {
+Terminal.prototype.write = function (data) {
+    if (this.mouseSelectionMode) {
+        this.leaveMouseSelection();
+    }
   var l = data.length
     , i = 0
     , j
@@ -2771,10 +2720,21 @@ Terminal.prototype.keyDown = function(ev) {
               return cancel(ev);
             }
           }
-          // Ctrl-V
+          // Ctrl-V,
           if (this.prefixMode && ev.keyCode === 86) {
             this.leavePrefix();
             return;
+          }
+            // if screen keys not enabled. and if you want to send the Ctrl-V, please use the virtual keyboard in the top right corner.
+          if (!this.screenKeys && ev.keyCode === 86) {
+              var textArea = this.getPasteTextarea();
+              textArea.focus();
+              setTimeout(function () {
+                  self.send(self.getPasteTextarea().value);
+                  self.getPasteTextarea().value = "";
+                  console.dir(self.getPasteTextarea().value);
+              }, 10);
+              return;
           }
           // Ctrl-C
           if ((this.prefixMode || this.selectMode) && ev.keyCode === 67) {
@@ -2886,7 +2846,10 @@ Terminal.prototype.keyPress = function(ev) {
   return false;
 };
 
-Terminal.prototype.send = function(data) {
+Terminal.prototype.send = function (data) {
+    if (this.mouseSelectionMode) {
+        this.leaveMouseSelection();
+    }
   var self = this;
 
   if (!this.queue) {
@@ -4856,6 +4819,21 @@ Terminal.prototype.leaveSelect = function() {
   this.refresh(0, this.rows - 1);
 };
 
+Terminal.prototype.enterMouseSelection = function () {
+    this.mousePreVisual = this.copyBuffer(this.lines);
+    this.selectText(this.x, this.x, this.ydisp + this.y, this.ydisp + this.y);
+    this.mouseSelectionMode = true;
+    console.dir("enterMouseSelection");
+}
+Terminal.prototype.leaveMouseSelection = function () {
+    console.dir("leaveMouseSelection");
+    this.mouseSelectionMode = false;
+    this.lines = this.mousePreVisual;
+    delete this.mousePreVisual;
+    delete this._selected;
+    this._selected = null;
+    this.refresh(0, this.rows - 1);
+}
 Terminal.prototype.enterVisual = function() {
   this._real.preVisual = this.copyBuffer(this.lines);
   this.selectText(this.x, this.x, this.ydisp + this.y, this.ydisp + this.y);
@@ -4947,6 +4925,30 @@ Terminal.prototype.getCopyTextarea = function(text) {
   return textarea;
 };
 
+Terminal.prototype.getPasteTextarea = function () {
+    var textarea = this._pasteTextarea
+ , document = this.document;
+
+    if (!textarea) {
+        textarea = document.createElement('textarea');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-32000px';
+        textarea.style.top = '-32000px';
+        textarea.style.width = '0px';
+        textarea.style.height = '0px';
+        textarea.style.opacity = '0';
+        textarea.style.backgroundColor = 'transparent';
+        textarea.style.borderStyle = 'none';
+        textarea.style.outlineStyle = 'none';
+
+        document.getElementsByTagName('body')[0].appendChild(textarea);
+
+        this._pasteTextarea = textarea;
+    }
+
+    return textarea;
+}
+
 // NOTE: Only works for primary selection on X11.
 // Non-X11 users should use Ctrl-C instead.
 Terminal.prototype.copyText = function(text) {
@@ -4961,7 +4963,6 @@ Terminal.prototype.copyText = function(text) {
   textarea.setSelectionRange(0, text.length);
 
   setTimeout(function() {
-    self.element.focus();
     self.focus();
   }, 1);
 };
