@@ -2807,6 +2807,8 @@ Terminal.prototype.keyDown = function(ev) {
           key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
         } else if (ev.keyCode === 192) {
           key = '\x1b`';
+        } else if (ev.keyCode === 190) {
+          key = '\x1b.';
         } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
           key = '\x1b' + (ev.keyCode - 48);
         }
