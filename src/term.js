@@ -2988,6 +2988,10 @@ Terminal.prototype.resize = function(x, y) {
   if (this.y >= y) this.y = y - 1;
   if (this.x >= x) this.x = x - 1;
 
+  // saved cursor should also stay on screen
+  if (this.savedY >= y) this.savedY = y - 1;
+  if (this.savedX >= x) this.savedX = x - 1;
+
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
