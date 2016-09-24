@@ -186,6 +186,8 @@ function Terminal(options) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
 
+  self.cancel = Terminal.cancel;
+
   Stream.call(this);
 
   if (typeof options === 'number') {
@@ -520,12 +522,20 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindCopy(document);
 
-  if (this.isMobile) {
-    this.fixMobile(document);
-  }
-
   if (this.useStyle) {
     Terminal.insertStyle(document, this.colors[256], this.colors[257]);
+  }
+};
+
+/**
+ * Clears all selected text, inside the terminal.
+ */
+
+Terminal.prototype.clearSelection = function () {
+  var selectionBaseNode = window.getSelection().baseNode;
+
+  if (selectionBaseNode && (this.element.contains(selectionBaseNode.parentElement))) {
+    window.getSelection().removeAllRanges();
   }
 };
 
@@ -583,6 +593,48 @@ Terminal.bindKeys = function(document) {
         || target === Terminal._textarea
         || target === Terminal.focus.parent) {
       return Terminal.focus.keyPress(ev);
+    }
+  }, true);
+
+  on(document, 'compositionstart', function(ev) {
+    if (!Terminal.focus) return;
+    var target = ev.target || ev.srcElement;
+    if (!target) return;
+    if (target === Terminal.focus.element
+        || target === Terminal.focus.context
+        || target === Terminal.focus.document
+        || target === Terminal.focus.body
+        || target === Terminal._textarea
+        || target === Terminal.focus.parent) {
+      return Terminal.focus.compositionStart(ev);
+    }
+  }, true);
+
+  on(document, 'compositionupdate', function(ev) {
+    if (!Terminal.focus) return;
+    var target = ev.target || ev.srcElement;
+    if (!target) return;
+    if (target === Terminal.focus.element
+        || target === Terminal.focus.context
+        || target === Terminal.focus.document
+        || target === Terminal.focus.body
+        || target === Terminal._textarea
+        || target === Terminal.focus.parent) {
+      return Terminal.focus.compositionUpdate(ev);
+    }
+  }, true);
+
+  on(document, 'compositionend', function(ev) {
+    if (!Terminal.focus) return;
+    var target = ev.target || ev.srcElement;
+    if (!target) return;
+    if (target === Terminal.focus.element
+        || target === Terminal.focus.context
+        || target === Terminal.focus.document
+        || target === Terminal.focus.body
+        || target === Terminal._textarea
+        || target === Terminal.focus.parent) {
+      return Terminal.focus.compositionEnd(ev);
     }
   }, true);
 
@@ -645,44 +697,6 @@ Terminal.bindCopy = function(document) {
       term.focus();
     }, 1);
   });
-};
-
-/**
- * Fix Mobile
- */
-
-Terminal.prototype.fixMobile = function(document) {
-  var self = this;
-
-  var textarea = document.createElement('textarea');
-  textarea.style.position = 'absolute';
-  textarea.style.left = '-32000px';
-  textarea.style.top = '-32000px';
-  textarea.style.width = '0px';
-  textarea.style.height = '0px';
-  textarea.style.opacity = '0';
-  textarea.style.backgroundColor = 'transparent';
-  textarea.style.borderStyle = 'none';
-  textarea.style.outlineStyle = 'none';
-  textarea.autocapitalize = 'none';
-  textarea.autocorrect = 'off';
-
-  document.getElementsByTagName('body')[0].appendChild(textarea);
-
-  Terminal._textarea = textarea;
-
-  setTimeout(function() {
-    textarea.focus();
-  }, 1000);
-
-  if (this.isAndroid) {
-    on(textarea, 'change', function() {
-      var value = textarea.textContent || textarea.value;
-      textarea.value = '';
-      textarea.textContent = '';
-      self.send(value + '\r');
-    });
-  }
 };
 
 /**
@@ -753,13 +767,29 @@ Terminal.prototype.open = function(parent) {
 
   // Parse user-agent strings.
   if (this.context.navigator && this.context.navigator.userAgent) {
-    this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
-    this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
-    this.isIphone = !!~this.context.navigator.userAgent.indexOf('iPhone');
     this.isAndroid = !!~this.context.navigator.userAgent.indexOf('Android');
-    this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
   }
+
+  /*
+  * Find the users platform. We use this to interpret the meta key
+  * and ISO third level shifts.
+  * http://stackoverflow.com/questions/19877924/what-is-the-list-of-possible-values-for-navigator-platform-as-of-today
+  */
+  if (this.context.navigator && this.context.navigator.platform) {
+    this.isMac = contains(
+    this.context.navigator.platform,
+    ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
+    );
+    this.isIpad = this.context.navigator.platform === 'iPad';
+    this.isIphone = this.context.navigator.platform === 'iPhone';
+    this.isMSWindows = contains(
+      this.context.navigator.platform,
+      ['Windows', 'Win16', 'Win32', 'WinCE']
+    );
+  }
+
+  this.isMobile = this.isIpad || this.isIphone || this.isAndroid;
 
   // Create our main terminal element.
   this.element = this.document.createElement('div');
@@ -778,6 +808,36 @@ Terminal.prototype.open = function(parent) {
     this.children.push(div);
   }
   this.parent.appendChild(this.element);
+
+  var textarea = document.createElement('textarea');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-32000px';
+  textarea.style.top = '-32000px';
+  textarea.style.width = '0px';
+  textarea.style.height = '0px';
+  textarea.style.opacity = '0';
+  textarea.style.backgroundColor = 'transparent';
+  textarea.style.borderStyle = 'none';
+  textarea.style.outlineStyle = 'none';
+  textarea.autocapitalize = 'none';
+  textarea.autocorrect = 'off';
+
+  document.getElementsByTagName('body')[0].appendChild(textarea);
+
+  Terminal._textarea = textarea;
+
+  setTimeout(function() {
+    textarea.focus();
+  }, 1000);
+
+  if (this.isAndroid) {
+    on(textarea, 'change', function() {
+      var value = textarea.textContent || textarea.value;
+      textarea.value = '';
+      textarea.textContent = '';
+      self.send(value + '\r');
+    });
+  }
 
   // Draw the screen.
   this.refresh(0, this.rows - 1);
@@ -1499,34 +1559,53 @@ Terminal.prototype.scrollDisp = function(disp) {
   this.refresh(0, this.rows - 1);
 };
 
-Terminal.prototype.write = function(data) {
-  var l = data.length
-    , i = 0
-    , j
-    , cs
-    , ch;
+/**
+ * Writes text to the terminal.
+ * @param {string} text The text to write to the terminal.
+ */
+Terminal.prototype.write = function (data) {
+  var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
 
   if (this.ybase !== this.ydisp) {
     this.ydisp = this.ybase;
+    this.emit('scroll', this.ydisp);
     this.maxRange();
   }
 
-  // this.log(JSON.stringify(data.replace(/\x1b/g, '^[')));
+  // apply leftover surrogate high from last write
+  if (this.surrogate_high) {
+    data = this.surrogate_high + data;
+    this.surrogate_high = '';
+  }
 
-  for (; i < l; i++, this.lch = ch) {
+  for (; i < l; i++) {
     ch = data[i];
+
+    // FIXME: higher chars than 0xa0 are not allowed in escape sequences
+    //        --> maybe move to default
+    code = data.charCodeAt(i);
+    if (0xD800 <= code && code <= 0xDBFF) {
+      // we got a surrogate high
+      // get surrogate low (next 2 bytes)
+      low = data.charCodeAt(i + 1);
+      if (isNaN(low)) {
+        // end of data stream, save surrogate high
+        this.surrogate_high = ch;
+        continue;
+      }
+      code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
+      ch += data.charAt(i + 1);
+    }
+    // surrogate low - already handled above
+    if (0xDC00 <= code && code <= 0xDFFF)
+      continue;
+
     switch (this.state) {
       case normal:
         switch (ch) {
-          // '\0'
-          // case '\0':
-          // case '\200':
-          //   break;
-
-          // '\a'
           case '\x07':
             this.bell();
             break;
@@ -1538,9 +1617,6 @@ Terminal.prototype.write = function(data) {
             if (this.convertEol) {
               this.x = 0;
             }
-            // TODO: Implement eat_newline_glitch.
-            // if (this.realX >= this.cols) break;
-            // this.realX = 0;
             this.y++;
             if (this.y > this.scrollBottom) {
               this.y--;
@@ -1582,31 +1658,80 @@ Terminal.prototype.write = function(data) {
 
           default:
             // ' '
+            // calculate print space
+            // expensive call, therefore we save width in line buffer
+            ch_width = wcwidth(code);
+
             if (ch >= ' ') {
               if (this.charset && this.charset[ch]) {
                 ch = this.charset[ch];
               }
 
-              if (this.x >= this.cols) {
-                this.x = 0;
-                this.y++;
-                if (this.y > this.scrollBottom) {
-                  this.y--;
-                  this.scroll();
+              row = this.y + this.ybase;
+
+              // insert combining char in last cell
+              // FIXME: needs handling after cursor jumps
+              if (!ch_width && this.x) {
+
+                // dont overflow left
+                if (this.lines[row][this.x - 1]) {
+                  if (!this.lines[row][this.x - 1][2]) {
+
+                    // found empty cell after fullwidth, need to go 2 cells back
+                    if (this.lines[row][this.x - 2])
+                      this.lines[row][this.x - 2][1] += ch;
+
+                  } else {
+                    this.lines[row][this.x - 1][1] += ch;
+                  }
+                  this.updateRange(this.y);
+                }
+                break;
+              }
+
+              // goto next line if ch would overflow
+              // TODO: needs a global min terminal width of 2
+              if (this.x + ch_width - 1 >= this.cols) {
+                // autowrap - DECAWM
+                if (this.wraparoundMode) {
+                  this.x = 0;
+                  this.y++;
+                  if (this.y > this.scrollBottom) {
+                    this.y--;
+                    this.scroll();
+                  }
+                } else {
+                  this.x = this.cols - 1;
+                  if (ch_width === 2)  // FIXME: check for xterm behavior
+                    continue;
+                }
+              }
+              row = this.y + this.ybase;
+
+              // insert mode: move characters to right
+              if (this.insertMode) {
+                // do this twice for a fullwidth char
+                for (var moves = 0; moves < ch_width; ++moves) {
+                  // remove last cell, if it's width is 0
+                  // we have to adjust the second last cell as well
+                  var removed = this.lines[this.y + this.ybase].pop();
+                  if (removed[2] === 0
+                    && this.lines[row][this.cols - 2]
+                    && this.lines[row][this.cols - 2][2] === 2)
+                    this.lines[row][this.cols - 2] = [this.curAttr, ' ', 1];
+
+                  // insert empty cell at cursor
+                  this.lines[row].splice(this.x, 0, [this.curAttr, ' ', 1]);
                 }
               }
 
-              this.lines[this.y + this.ybase][this.x] = [this.curAttr, ch];
+              this.lines[row][this.x] = [this.curAttr, ch, ch_width];
               this.x++;
               this.updateRange(this.y);
 
-              if (isWide(ch)) {
-                j = this.y + this.ybase;
-                if (this.cols < 2 || this.x >= this.cols) {
-                  this.lines[j][this.x - 1] = [this.curAttr, ' '];
-                  break;
-                }
-                this.lines[j][this.x] = [this.curAttr, ' '];
+              // fullwidth char - set next cell width to zero and advance cursor
+              if (ch_width === 2) {
+                this.lines[row][this.x] = [this.curAttr, '', 0];
                 this.x++;
               }
             }
@@ -1632,8 +1757,7 @@ Terminal.prototype.write = function(data) {
           // ESC P Device Control String ( DCS is 0x90).
           case 'P':
             this.params = [];
-            this.prefix = '';
-            this.currentParam = '';
+            this.currentParam = 0;
             this.state = dcs;
             break;
 
@@ -1774,14 +1898,14 @@ Terminal.prototype.write = function(data) {
             this.tabSet();
             break;
 
-          // ESC = Application Keypad (DECPAM).
+          // ESC = Application Keypad (DECKPAM).
           case '=':
             this.log('Serial port requested application keypad.');
             this.applicationKeypad = true;
             this.state = normal;
             break;
 
-          // ESC > Normal Keypad (DECPNM).
+          // ESC > Normal Keypad (DECKPNM).
           case '>':
             this.log('Switching back to normal keypad.');
             this.applicationKeypad = false;
@@ -1856,14 +1980,8 @@ Terminal.prototype.write = function(data) {
         // OSC Ps ; Pt ST
         // OSC Ps ; Pt BEL
         //   Set Text Parameters.
-        if ((this.lch === '\x1b' && ch === '\\') || ch === '\x07') {
-          if (this.lch === '\x1b') {
-            if (typeof this.currentParam === 'string') {
-              this.currentParam = this.currentParam.slice(0, -1);
-            } else if (typeof this.currentParam == 'number') {
-              this.currentParam = (this.currentParam - ('\x1b'.charCodeAt(0) - 48)) / 10;
-            }
-          }
+        if (ch === '\x1b' || ch === '\x07') {
+          if (ch === '\x1b') i++;
 
           this.params.push(this.currentParam);
 
@@ -2395,158 +2513,94 @@ Terminal.prototype.write = function(data) {
         break;
 
       case dcs:
-        if ((this.lch === '\x1b' && ch === '\\') || ch === '\x07') {
-          // Workarounds:
-          if (this.prefix === 'tmux;\x1b') {
-            // `DCS tmux; Pt ST` may contain a Pt with an ST
-            // XXX Does tmux work this way?
-            // if (this.lch === '\x1b' & data[i + 1] === '\x1b' && data[i + 2] === '\\') {
-            //   this.currentParam += ch;
-            //   continue;
-            // }
-            // Tmux only accepts ST, not BEL:
-            if (ch === '\x07') {
-              this.currentParam += ch;
-              continue;
-            }
-          }
-
-          if (this.lch === '\x1b') {
-            if (typeof this.currentParam === 'string') {
-              this.currentParam = this.currentParam.slice(0, -1);
-            } else if (typeof this.currentParam == 'number') {
-              this.currentParam = (this.currentParam - ('\x1b'.charCodeAt(0) - 48)) / 10;
-            }
-          }
-
-          this.params.push(this.currentParam);
-
-          var pt = this.params[this.params.length - 1];
+        if (ch === '\x1b' || ch === '\x07') {
+          if (ch === '\x1b') i++;
 
           switch (this.prefix) {
             // User-Defined Keys (DECUDK).
-            // DCS Ps; Ps| Pt ST
-            case UDK:
-              this.emit('udk', {
-                clearAll: this.params[0] === 0,
-                eraseBelow: this.params[0] === 1,
-                lockKeys: this.params[1] === 0,
-                dontLockKeys: this.params[1] === 1,
-                keyList: (this.params[2] + '').split(';').map(function(part) {
-                  part = part.split('/');
-                  return {
-                    keyCode: part[0],
-                    hexKeyValue: part[1]
-                  };
-                })
-              });
+            case '':
               break;
 
             // Request Status String (DECRQSS).
-            // DCS $ q Pt ST
             // test: echo -e '\eP$q"p\e\\'
             case '$q':
-              var valid = 0;
+              var pt = this.currentParam
+                , valid = false;
 
               switch (pt) {
                 // DECSCA
-                // CSI Ps " q
                 case '"q':
                   pt = '0"q';
-                  valid = 1;
                   break;
 
                 // DECSCL
-                // CSI Ps ; Ps " p
                 case '"p':
-                  pt = '61;0"p';
-                  valid = 1;
+                  pt = '61"p';
                   break;
 
                 // DECSTBM
-                // CSI Ps ; Ps r
                 case 'r':
                   pt = ''
                     + (this.scrollTop + 1)
                     + ';'
                     + (this.scrollBottom + 1)
                     + 'r';
-                  valid = 1;
                   break;
 
                 // SGR
-                // CSI Pm m
                 case 'm':
-                  // TODO: Parse this.curAttr here.
-                  // pt = '0m';
-                  // valid = 1;
-                  valid = 0; // Not implemented.
+                  pt = '0m';
                   break;
 
                 default:
                   this.error('Unknown DCS Pt: %s.', pt);
-                  valid = 0; // unimplemented
+                  pt = '';
                   break;
               }
 
-              this.send('\x1bP' + valid + '$r' + pt + '\x1b\\');
+              this.send('\x1bP' + +valid + '$r' + pt + '\x1b\\');
               break;
 
             // Set Termcap/Terminfo Data (xterm, experimental).
-            // DCS + p Pt ST
             case '+p':
-              this.emit('set terminfo', {
-                name: this.params[0]
-              });
               break;
 
             // Request Termcap/Terminfo String (xterm, experimental)
             // Regular xterm does not even respond to this sequence.
             // This can cause a small glitch in vim.
-            // DCS + q Pt ST
             // test: echo -ne '\eP+q6b64\e\\'
             case '+q':
-              var valid = false;
+              var pt = this.currentParam
+                , valid = false;
+
               this.send('\x1bP' + +valid + '+r' + pt + '\x1b\\');
               break;
 
-            // Implement tmux sequence forwarding is
-            // someone uses term.js for a multiplexer.
-            // DCS tmux; ESC Pt ST
-            case 'tmux;\x1b':
-              this.emit('passthrough', pt);
-              break;
-
             default:
-              this.error('Unknown DCS prefix: %s.', pt);
+              this.error('Unknown DCS prefix: %s.', this.prefix);
               break;
           }
 
           this.currentParam = 0;
           this.prefix = '';
           this.state = normal;
+        } else if (!this.currentParam) {
+          if (!this.prefix && ch !== '$' && ch !== '+') {
+            this.currentParam = ch;
+          } else if (this.prefix.length === 2) {
+            this.currentParam = ch;
+          } else {
+            this.prefix += ch;
+          }
         } else {
           this.currentParam += ch;
-          if (!this.prefix) {
-            if (/^\d*;\d*\|/.test(this.currentParam)) {
-              this.prefix = UDK;
-              this.params = this.currentParam.split(/[;|]/).map(function(n) {
-                if (!n.length) return 0;
-                return +n;
-              }).slice(0, -1);
-              this.currentParam = '';
-            } else if (/^[$+][a-zA-Z]/.test(this.currentParam)
-                || /^\w+;\x1b/.test(this.currentParam)) {
-              this.prefix = this.currentParam;
-              this.currentParam = '';
-            }
-          }
         }
         break;
 
       case ignore:
         // For PM and APC.
-        if ((this.lch === '\x1b' && ch === '\\') || ch === '\x07') {
+        if (ch === '\x1b' || ch === '\x07') {
+          if (ch === '\x1b') i++;
           this.state = normal;
         }
         break;
@@ -2555,12 +2609,14 @@ Terminal.prototype.write = function(data) {
 
   this.updateRange(this.y);
   this.refresh(this.refreshStart, this.refreshEnd);
-
-  return true;
 };
 
-Terminal.prototype.writeln = function(data) {
-  return this.write(data + '\r\n');
+/**
+ * Writes text to the terminal, followed by a break line character (\n).
+ * @param {string} text The text to write to the terminal.
+ */
+Terminal.prototype.writeln = function (data) {
+  this.write(data + '\r\n');
 };
 
 Terminal.prototype.end = function(data) {
@@ -2582,257 +2638,311 @@ Terminal.prototype.pause = function() {
 
 // Key Resources:
 // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
-Terminal.prototype.keyDown = function(ev) {
-  var self = this
-    , key;
+Terminal.prototype.keyDown = function (ev) {
+  var self = this;
+  var result = this.evaluateKeyEscapeSequence(ev);
 
-  switch (ev.keyCode) {
-    // backspace
-    case 8:
-      if (ev.altKey) {
-        key = '\x17';
-        break;
-      }
-      if (ev.shiftKey) {
-        key = '\x08'; // ^H
-        break;
-      }
-      key = '\x7f'; // ^?
-      break;
-    // tab
-    case 9:
-      if (ev.shiftKey) {
-        key = '\x1b[Z';
-        break;
-      }
-      key = '\t';
-      break;
-    // return/enter
-    case 13:
-      key = '\r';
-      break;
-    // escape
-    case 27:
-      key = '\x1b';
-      break;
-    // space
-    case 32:
-      key = '\x20';
-      break;
-    // left-arrow
-    case 37:
-      if (this.applicationCursor) {
-        key = '\x1bOD'; // SS3 as ^[O for 7-bit
-        //key = '\x8fD'; // SS3 as 0x8f for 8-bit
-        break;
-      }
-      if (ev.ctrlKey) {
-        key = '\x1b[5D';
-        break;
-      }
-      key = '\x1b[D';
-      break;
-    // right-arrow
-    case 39:
-      if (this.applicationCursor) {
-        key = '\x1bOC';
-        break;
-      }
-      if (ev.ctrlKey) {
-        key = '\x1b[5C';
-        break;
-      }
-      key = '\x1b[C';
-      break;
-    // up-arrow
-    case 38:
-      if (this.applicationCursor) {
-        key = '\x1bOA';
-        break;
-      }
-      if (ev.ctrlKey) {
-        this.scrollDisp(-1);
-        return cancel(ev);
-      } else {
-        key = '\x1b[A';
-      }
-      break;
-    // down-arrow
-    case 40:
-      if (this.applicationCursor) {
-        key = '\x1bOB';
-        break;
-      }
-      if (ev.ctrlKey) {
-        this.scrollDisp(1);
-        return cancel(ev);
-      } else {
-        key = '\x1b[B';
-      }
-      break;
-    // delete
-    case 46:
-      key = '\x1b[3~';
-      break;
-    // insert
-    case 45:
-      key = '\x1b[2~';
-      break;
-    // home
-    case 36:
-      if (this.applicationKeypad) {
-        key = '\x1bOH';
-        break;
-      }
-      key = '\x1bOH';
-      break;
-    // end
-    case 35:
-      if (this.applicationKeypad) {
-        key = '\x1bOF';
-        break;
-      }
-      key = '\x1bOF';
-      break;
-    // page up
-    case 33:
-      if (ev.shiftKey) {
-        this.scrollDisp(-(this.rows - 1));
-        return cancel(ev);
-      } else {
-        key = '\x1b[5~';
-      }
-      break;
-    // page down
-    case 34:
-      if (ev.shiftKey) {
-        this.scrollDisp(this.rows - 1);
-        return cancel(ev);
-      } else {
-        key = '\x1b[6~';
-      }
-      break;
-    // F1
-    case 112:
-      key = '\x1bOP';
-      break;
-    // F2
-    case 113:
-      key = '\x1bOQ';
-      break;
-    // F3
-    case 114:
-      key = '\x1bOR';
-      break;
-    // F4
-    case 115:
-      key = '\x1bOS';
-      break;
-    // F5
-    case 116:
-      key = '\x1b[15~';
-      break;
-    // F6
-    case 117:
-      key = '\x1b[17~';
-      break;
-    // F7
-    case 118:
-      key = '\x1b[18~';
-      break;
-    // F8
-    case 119:
-      key = '\x1b[19~';
-      break;
-    // F9
-    case 120:
-      key = '\x1b[20~';
-      break;
-    // F10
-    case 121:
-      key = '\x1b[21~';
-      break;
-    // F11
-    case 122:
-      key = '\x1b[23~';
-      break;
-    // F12
-    case 123:
-      key = '\x1b[24~';
-      break;
-    default:
-      // a-z and space
-      if (ev.ctrlKey) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          // Ctrl-A
-          if (this.screenKeys) {
-            if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
-              this.enterPrefix();
-              return cancel(ev);
-            }
-          }
-          // Ctrl-V
-          if (this.prefixMode && ev.keyCode === 86) {
-            this.leavePrefix();
-            return;
-          }
-          // Ctrl-C
-          if ((this.prefixMode || this.selectMode) && ev.keyCode === 67) {
-            if (this.visualMode) {
-              setTimeout(function() {
-                self.leaveVisual();
-              }, 1);
-            }
-            return;
-          }
-          key = String.fromCharCode(ev.keyCode - 64);
-        } else if (ev.keyCode === 32) {
-          // NUL
-          key = String.fromCharCode(0);
-        } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
-          // escape, file sep, group sep, record sep, unit sep
-          key = String.fromCharCode(ev.keyCode - 51 + 27);
-        } else if (ev.keyCode === 56) {
-          // delete
-          key = String.fromCharCode(127);
-        } else if (ev.keyCode === 219) {
-          // ^[ - escape
-          key = String.fromCharCode(27);
-        } else if (ev.keyCode === 221) {
-          // ^] - group sep
-          key = String.fromCharCode(29);
-        }
-      } else if (ev.altKey) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
-        } else if (ev.keyCode === 192) {
-          key = '\x1b`';
-        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-          key = '\x1b' + (ev.keyCode - 48);
-        }
-      }
-      break;
+  if (result.scrollDisp) {
+    this.scrollDisp(result.scrollDisp);
+    return this.cancel(ev);
   }
 
-  if (!key) return true;
-
-  if (this.prefixMode) {
-    this.leavePrefix();
-    return cancel(ev);
+  if (isThirdLevelShift(this, ev)) {
+    return true;
   }
 
-  if (this.selectMode) {
-    this.keySelect(ev, key);
-    return cancel(ev);
+  if (result.cancel) {
+    // The event is canceled at the end already, is this necessary?
+    this.cancel(ev);
+  }
+
+  if (!result.key) {
+    return true;
   }
 
   this.emit('keydown', ev);
-  this.emit('key', key, ev);
-
+  this.emit('key', result.key, ev);
   this.showCursor();
-  this.handler(key);
+  this.handler(result.key);
 
-  return cancel(ev);
+  return this.cancel(ev);
+};
+
+/**
+ * Returns an object that determines how a KeyboardEvent should be handled. The key of the
+ * returned value is the new key code to pass to the PTY.
+ *
+ * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+ * @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
+ */
+Terminal.prototype.evaluateKeyEscapeSequence = function (ev) {
+  var result = {
+    // Whether to cancel event propogation (NOTE: this may not be needed since the event is
+    // canceled at the end of keyDown
+    cancel: false,
+    // The new key even to emit
+    key: undefined,
+    // The number of characters to scroll, if this is defined it will cancel the event
+    scrollDisp: undefined
+  };
+  var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
+  switch (ev.keyCode) {
+    case 8:
+      // backspace
+      if (ev.shiftKey) {
+        result.key = '\x08'; // ^H
+        break;
+      }
+      result.key = '\x7f'; // ^?
+      break;
+    case 9:
+      // tab
+      if (ev.shiftKey) {
+        result.key = '\x1b[Z';
+        break;
+      }
+      result.key = '\t';
+      result.cancel = true;
+      break;
+    case 13:
+      // return/enter
+      result.key = '\r';
+      result.cancel = true;
+      break;
+    case 27:
+      // escape
+      result.key = '\x1b';
+      result.cancel = true;
+      break;
+    case 37:
+      // left-arrow
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'D';
+        // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3D') {
+          result.key = '\x1b[1;5D';
+        }
+      } else if (this.applicationCursor) {
+        result.key = '\x1bOD';
+      } else {
+        result.key = '\x1b[D';
+      }
+      break;
+    case 39:
+      // right-arrow
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'C';
+        // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3C') {
+          result.key = '\x1b[1;5C';
+        }
+      } else if (this.applicationCursor) {
+        result.key = '\x1bOC';
+      } else {
+        result.key = '\x1b[C';
+      }
+      break;
+    case 38:
+      // up-arrow
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'A';
+        // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3A') {
+          result.key = '\x1b[1;5A';
+        }
+      } else if (this.applicationCursor) {
+        result.key = '\x1bOA';
+      } else {
+        result.key = '\x1b[A';
+      }
+      break;
+    case 40:
+      // down-arrow
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'B';
+        // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3B') {
+          result.key = '\x1b[1;5B';
+        }
+      } else if (this.applicationCursor) {
+        result.key = '\x1bOB';
+      } else {
+        result.key = '\x1b[B';
+      }
+      break;
+    case 45:
+      // insert
+      if (!ev.shiftKey && !ev.ctrlKey) {
+        // <Ctrl> or <Shift> + <Insert> are used to
+        // copy-paste on some systems.
+        result.key = '\x1b[2~';
+      }
+      break;
+    case 46:
+      // delete
+      if (modifiers) {
+        result.key = '\x1b[3;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[3~';
+      }
+      break;
+    case 36:
+      // home
+      if (modifiers)
+        result.key = '\x1b[1;' + (modifiers + 1) + 'H';
+      else if (this.applicationCursor)
+        result.key = '\x1bOH';
+      else
+        result.key = '\x1b[H';
+      break;
+    case 35:
+      // end
+      if (modifiers)
+        result.key = '\x1b[1;' + (modifiers + 1) + 'F';
+      else if (this.applicationCursor)
+        result.key = '\x1bOF';
+      else
+        result.key = '\x1b[F';
+      break;
+    case 33:
+      // page up
+      if (ev.shiftKey) {
+        result.scrollDisp = -(this.rows - 1);
+      } else {
+        result.key = '\x1b[5~';
+      }
+      break;
+    case 34:
+      // page down
+      if (ev.shiftKey) {
+        result.scrollDisp = this.rows - 1;
+      } else {
+        result.key = '\x1b[6~';
+      }
+      break;
+    case 112:
+      // F1-F12
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'P';
+      } else {
+        result.key = '\x1bOP';
+      }
+      break;
+    case 113:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'Q';
+      } else {
+        result.key = '\x1bOQ';
+      }
+      break;
+    case 114:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'R';
+      } else {
+        result.key = '\x1bOR';
+      }
+      break;
+    case 115:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'S';
+      } else {
+        result.key = '\x1bOS';
+      }
+      break;
+    case 116:
+      if (modifiers) {
+        result.key = '\x1b[15;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[15~';
+      }
+      break;
+    case 117:
+      if (modifiers) {
+        result.key = '\x1b[17;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[17~';
+      }
+      break;
+    case 118:
+      if (modifiers) {
+        result.key = '\x1b[18;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[18~';
+      }
+      break;
+    case 119:
+      if (modifiers) {
+        result.key = '\x1b[19;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[19~';
+      }
+      break;
+    case 120:
+      if (modifiers) {
+        result.key = '\x1b[20;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[20~';
+      }
+      break;
+    case 121:
+      if (modifiers) {
+        result.key = '\x1b[21;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[21~';
+      }
+      break;
+    case 122:
+      if (modifiers) {
+        result.key = '\x1b[23;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[23~';
+      }
+      break;
+    case 123:
+      if (modifiers) {
+        result.key = '\x1b[24;' + (modifiers + 1) + '~';
+      } else {
+        result.key = '\x1b[24~';
+      }
+      break;
+    default:
+      // a-z and space
+      if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
+        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          result.key = String.fromCharCode(ev.keyCode - 64);
+        } else if (ev.keyCode === 32) {
+          // NUL
+          result.key = String.fromCharCode(0);
+        } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
+          // escape, file sep, group sep, record sep, unit sep
+          result.key = String.fromCharCode(ev.keyCode - 51 + 27);
+        } else if (ev.keyCode === 56) {
+          // delete
+          result.key = String.fromCharCode(127);
+        } else if (ev.keyCode === 219) {
+          // ^[ - escape
+          result.key = String.fromCharCode(27);
+        } else if (ev.keyCode === 221) {
+          // ^] - group sep
+          result.key = String.fromCharCode(29);
+        }
+      } else if (!this.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        // On Mac this is a third level shift. Use <Esc> instead.
+        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+        } else if (ev.keyCode === 192) {
+          result.key = '\x1b`';
+        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
+          result.key = '\x1b' + (ev.keyCode - 48);
+        }
+      }
+      break;
+  }
+  return result;
 };
 
 Terminal.prototype.setgLevel = function(g) {
@@ -2847,10 +2957,16 @@ Terminal.prototype.setgCharset = function(g, charset) {
   }
 };
 
+/**
+ * Handle a keypress event.
+ * Key Resources:
+ *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
+ * @param {KeyboardEvent} ev The keypress event to be handled.
+ */
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
-  cancel(ev);
+  this.cancel(ev);
 
   if (ev.charCode) {
     key = ev.charCode;
@@ -2862,28 +2978,34 @@ Terminal.prototype.keyPress = function(ev) {
     return false;
   }
 
-  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+  if (!key || (
+    (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this, ev)
+  )) {
+    return false;
+  }
 
   key = String.fromCharCode(key);
 
-  if (this.prefixMode) {
-    this.leavePrefix();
-    this.keyPrefix(ev, key);
-    return false;
-  }
-
-  if (this.selectMode) {
-    this.keySelect(ev, key);
-    return false;
-  }
-
   this.emit('keypress', key, ev);
   this.emit('key', key, ev);
-
   this.showCursor();
   this.handler(key);
 
   return false;
+};
+
+Terminal.prototype.compositionStart = function (ev) {
+  console.log("COMPOSITION: START | Data: " + ev.data);
+};
+
+Terminal.prototype.compositionUpdate = function (ev) {
+  console.log("COMPOSITION: UPDATE | Data: " + ev.data);
+};
+
+Terminal.prototype.compositionEnd = function (ev) {
+  console.log("COMPOSITION: END | Data: " + ev.data);
+
+  Terminal.focus.send(ev.data);
 };
 
 Terminal.prototype.send = function(data) {
@@ -5824,6 +5946,15 @@ Terminal.charsets.ISOLatin = null; // /A
  * Helpers
  */
 
+function contains(el, arr) {
+  for (var i = 0; i < arr.length; i += 1) {
+    if (el === arr[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function on(el, type, handler, capture) {
   el.addEventListener(type, handler, capture || false);
 }
@@ -5877,6 +6008,19 @@ function indexOf(obj, el) {
     if (obj[i] === el) return i;
   }
   return -1;
+}
+
+function isThirdLevelShift(term, ev) {
+  var thirdLevelKey =
+      (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+
+  if (ev.type == 'keypress') {
+    return thirdLevelKey;
+  }
+
+  // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+  return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
 function isWide(ch) {
@@ -5954,6 +6098,109 @@ function keys(obj) {
   }
   return keys;
 }
+
+var wcwidth = (function(opts) {
+  // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
+  // combining characters
+  var COMBINING = [
+    [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
+    [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
+    [0x05C4, 0x05C5], [0x05C7, 0x05C7], [0x0600, 0x0603],
+    [0x0610, 0x0615], [0x064B, 0x065E], [0x0670, 0x0670],
+    [0x06D6, 0x06E4], [0x06E7, 0x06E8], [0x06EA, 0x06ED],
+    [0x070F, 0x070F], [0x0711, 0x0711], [0x0730, 0x074A],
+    [0x07A6, 0x07B0], [0x07EB, 0x07F3], [0x0901, 0x0902],
+    [0x093C, 0x093C], [0x0941, 0x0948], [0x094D, 0x094D],
+    [0x0951, 0x0954], [0x0962, 0x0963], [0x0981, 0x0981],
+    [0x09BC, 0x09BC], [0x09C1, 0x09C4], [0x09CD, 0x09CD],
+    [0x09E2, 0x09E3], [0x0A01, 0x0A02], [0x0A3C, 0x0A3C],
+    [0x0A41, 0x0A42], [0x0A47, 0x0A48], [0x0A4B, 0x0A4D],
+    [0x0A70, 0x0A71], [0x0A81, 0x0A82], [0x0ABC, 0x0ABC],
+    [0x0AC1, 0x0AC5], [0x0AC7, 0x0AC8], [0x0ACD, 0x0ACD],
+    [0x0AE2, 0x0AE3], [0x0B01, 0x0B01], [0x0B3C, 0x0B3C],
+    [0x0B3F, 0x0B3F], [0x0B41, 0x0B43], [0x0B4D, 0x0B4D],
+    [0x0B56, 0x0B56], [0x0B82, 0x0B82], [0x0BC0, 0x0BC0],
+    [0x0BCD, 0x0BCD], [0x0C3E, 0x0C40], [0x0C46, 0x0C48],
+    [0x0C4A, 0x0C4D], [0x0C55, 0x0C56], [0x0CBC, 0x0CBC],
+    [0x0CBF, 0x0CBF], [0x0CC6, 0x0CC6], [0x0CCC, 0x0CCD],
+    [0x0CE2, 0x0CE3], [0x0D41, 0x0D43], [0x0D4D, 0x0D4D],
+    [0x0DCA, 0x0DCA], [0x0DD2, 0x0DD4], [0x0DD6, 0x0DD6],
+    [0x0E31, 0x0E31], [0x0E34, 0x0E3A], [0x0E47, 0x0E4E],
+    [0x0EB1, 0x0EB1], [0x0EB4, 0x0EB9], [0x0EBB, 0x0EBC],
+    [0x0EC8, 0x0ECD], [0x0F18, 0x0F19], [0x0F35, 0x0F35],
+    [0x0F37, 0x0F37], [0x0F39, 0x0F39], [0x0F71, 0x0F7E],
+    [0x0F80, 0x0F84], [0x0F86, 0x0F87], [0x0F90, 0x0F97],
+    [0x0F99, 0x0FBC], [0x0FC6, 0x0FC6], [0x102D, 0x1030],
+    [0x1032, 0x1032], [0x1036, 0x1037], [0x1039, 0x1039],
+    [0x1058, 0x1059], [0x1160, 0x11FF], [0x135F, 0x135F],
+    [0x1712, 0x1714], [0x1732, 0x1734], [0x1752, 0x1753],
+    [0x1772, 0x1773], [0x17B4, 0x17B5], [0x17B7, 0x17BD],
+    [0x17C6, 0x17C6], [0x17C9, 0x17D3], [0x17DD, 0x17DD],
+    [0x180B, 0x180D], [0x18A9, 0x18A9], [0x1920, 0x1922],
+    [0x1927, 0x1928], [0x1932, 0x1932], [0x1939, 0x193B],
+    [0x1A17, 0x1A18], [0x1B00, 0x1B03], [0x1B34, 0x1B34],
+    [0x1B36, 0x1B3A], [0x1B3C, 0x1B3C], [0x1B42, 0x1B42],
+    [0x1B6B, 0x1B73], [0x1DC0, 0x1DCA], [0x1DFE, 0x1DFF],
+    [0x200B, 0x200F], [0x202A, 0x202E], [0x2060, 0x2063],
+    [0x206A, 0x206F], [0x20D0, 0x20EF], [0x302A, 0x302F],
+    [0x3099, 0x309A], [0xA806, 0xA806], [0xA80B, 0xA80B],
+    [0xA825, 0xA826], [0xFB1E, 0xFB1E], [0xFE00, 0xFE0F],
+    [0xFE20, 0xFE23], [0xFEFF, 0xFEFF], [0xFFF9, 0xFFFB],
+    [0x10A01, 0x10A03], [0x10A05, 0x10A06], [0x10A0C, 0x10A0F],
+    [0x10A38, 0x10A3A], [0x10A3F, 0x10A3F], [0x1D167, 0x1D169],
+    [0x1D173, 0x1D182], [0x1D185, 0x1D18B], [0x1D1AA, 0x1D1AD],
+    [0x1D242, 0x1D244], [0xE0001, 0xE0001], [0xE0020, 0xE007F],
+    [0xE0100, 0xE01EF]
+  ];
+  // binary search
+  function bisearch(ucs) {
+    var min = 0;
+    var max = COMBINING.length - 1;
+    var mid;
+    if (ucs < COMBINING[0][0] || ucs > COMBINING[max][1])
+      return false;
+    while (max >= min) {
+      mid = Math.floor((min + max) / 2);
+      if (ucs > COMBINING[mid][1])
+        min = mid + 1;
+      else if (ucs < COMBINING[mid][0])
+        max = mid - 1;
+      else
+        return true;
+    }
+    return false;
+  }
+  function wcwidth(ucs) {
+    // test for 8-bit control characters
+    if (ucs === 0)
+      return opts.nul;
+    if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0))
+      return opts.control;
+    // binary search in table of non-spacing characters
+    if (bisearch(ucs))
+      return 0;
+    // if we arrive here, ucs is not a combining or C0/C1 control character
+    return 1 +
+      (
+      ucs >= 0x1100 &&
+      (
+        ucs <= 0x115f ||                // Hangul Jamo init. consonants
+        ucs == 0x2329 ||
+        ucs == 0x232a ||
+        (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs != 0x303f) ||  // CJK..Yi
+        (ucs >= 0xac00 && ucs <= 0xd7a3) ||    // Hangul Syllables
+        (ucs >= 0xf900 && ucs <= 0xfaff) ||    // CJK Compat Ideographs
+        (ucs >= 0xfe10 && ucs <= 0xfe19) ||    // Vertical forms
+        (ucs >= 0xfe30 && ucs <= 0xfe6f) ||    // CJK Compat Forms
+        (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
+        (ucs >= 0xffe0 && ucs <= 0xffe6) ||
+        (ucs >= 0x20000 && ucs <= 0x2fffd) ||
+        (ucs >= 0x30000 && ucs <= 0x3fffd)
+      )
+    );
+  }
+  return wcwidth;
+})({nul: 0, control: 0});  // configurable options
 
 /**
  * Expose
