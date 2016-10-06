@@ -707,6 +707,7 @@ Terminal.prototype.open = function(parent) {
   this.parent.appendChild(this.element);
 
   var textarea = document.createElement('textarea');
+  textarea.id = "termTextarea";
   textarea.style.position = 'absolute';
   textarea.style.left = '-32000px';
   textarea.style.top = '-32000px';

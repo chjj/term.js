@@ -9,10 +9,6 @@ Maintenance fork to keep compatibility with existing implementation. Backporting
 * Enhancements made in `evaluateKeyEscapeSequence`;
 * Killed the various modes: prefixMode; selectMode; visualMode; searchMode - use tmux/screen instead
 
-# ToDo
-
-- [ ] PuTTY like select to Copy and Right-click to Paste functionality
-
 ## License
 
 * Copyright (c) 2013-2016, Sten Feldman (MIT License)
