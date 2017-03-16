@@ -2680,18 +2680,10 @@ Terminal.prototype.keyDown = function(ev) {
       break;
     // home
     case 36:
-      if (this.applicationKeypad) {
-        key = '\x1bOH';
-        break;
-      }
       key = '\x1bOH';
       break;
     // end
     case 35:
-      if (this.applicationKeypad) {
-        key = '\x1bOF';
-        break;
-      }
       key = '\x1bOF';
       break;
     // page up
