@@ -233,7 +233,7 @@ function Terminal(options) {
   this.rows = options.rows || options.geometry[1];
 
   // Act as though we are a node TTY stream:
-  this.setRawMode;
+  this.setRawMode = undefined;
   this.isTTY = true;
   this.isRaw = true;
   this.columns = this.cols;
@@ -249,7 +249,7 @@ function Terminal(options) {
   this.y = 0;
   this.cursorState = 0;
   this.cursorHidden = false;
-  this.convertEol;
+  this.convertEol = undefined;
   this.state = 0;
   this.queue = '';
   this.scrollTop = 0;
@@ -268,12 +268,12 @@ function Terminal(options) {
   this.selectMode = false;
   this.visualMode = false;
   this.searchMode = false;
-  this.searchDown;
+  this.searchDown = undefined;
   this.entry = '';
   this.entryPrefix = 'Search: ';
-  this._real;
-  this._selected;
-  this._textarea;
+  this._real = undefined;
+  this._selected = undefined;
+  this._textarea = undefined;
 
   // charset
   this.charset = null;
@@ -282,25 +282,25 @@ function Terminal(options) {
   this.charsets = [null];
 
   // mouse properties
-  this.decLocator;
-  this.x10Mouse;
-  this.vt200Mouse;
-  this.vt300Mouse;
-  this.normalMouse;
-  this.mouseEvents;
-  this.sendFocus;
-  this.utfMouse;
-  this.sgrMouse;
-  this.urxvtMouse;
+  this.decLocator = undefined;
+  this.x10Mouse = undefined;
+  this.vt200Mouse = undefined;
+  this.vt300Mouse = undefined;
+  this.normalMouse = undefined;
+  this.mouseEvents = undefined;
+  this.sendFocus = undefined;
+  this.utfMouse = undefined;
+  this.sgrMouse = undefined;
+  this.urxvtMouse = undefined;
 
   // misc
-  this.element;
-  this.children;
-  this.refreshStart;
-  this.refreshEnd;
-  this.savedX;
-  this.savedY;
-  this.savedCols;
+  this.element = undefined;
+  this.children = undefined;
+  this.refreshStart = undefined;
+  this.refreshEnd = undefined;
+  this.savedX = undefined;
+  this.savedY = undefined;
+  this.savedCols = undefined;
 
   // stream
   this.readable = true;
@@ -320,7 +320,7 @@ function Terminal(options) {
     this.lines.push(this.blankLine());
   }
 
-  this.tabs;
+  this.tabs = undefined;
   this.setupStops();
 }
 
