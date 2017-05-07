@@ -1413,9 +1413,12 @@ Terminal.prototype.refresh = function(start, end) {
     this.children[y].innerHTML = out;
   }
 
-  if (parent) parent.appendChild(this.element);
+  if (parent) {
+    parent.appendChild(this.element);
+    this.element.focus();
+  }
 };
-
+  
 Terminal.prototype._cursorBlink = function() {
   if (Terminal.focus !== this) return;
   this.cursorState ^= 1;
