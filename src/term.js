@@ -2713,6 +2713,12 @@ Terminal.prototype.evaluateKeyEscapeSequence = function (ev) {
         result.key = '\x1b[6~';
       }
       break;
+    case 86:
+      // Handle keyboard paste (Firefox & Chrome)
+      if ((this.isMac && ev.metaKey) || (!this.isMac && ev.ctrlKey)) {
+        Terminal._textarea.focus();
+      }
+      break;
     case 112:
       // F1-F12
       if (modifiers) {
@@ -2855,8 +2861,6 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
-  this.cancel(ev);
-
   if (ev.charCode) {
     key = ev.charCode;
   } else if (ev.which == null) {
@@ -2865,6 +2869,15 @@ Terminal.prototype.keyPress = function(ev) {
     key = ev.which;
   } else {
     return false;
+  }
+
+  // Don't cancel on paste and set focus on textarea (Safari)
+  if ((this.isMac && ev.metaKey && key === 118) ||
+      (!this.isMac && ev.ctrlKey && key === 118)) {
+    Terminal._textarea.focus();
+  }
+  else {
+    this.cancel(ev);
   }
 
   if (!key || (
