@@ -8,13 +8,29 @@
   "preferGlobal": false,
   "repository": "git://github.com/chjj/term.js.git",
   "homepage": "https://github.com/chjj/term.js",
-  "bugs": { "url": "https://github.com/chjj/term.js/issues" },
-  "keywords": ["tty", "terminal", "term", "xterm"],
-  "tags": ["tty", "terminal", "term", "xterm"],
-  "engines": { "node": ">= 0.8.0" },
+  "bugs": {
+    "url": "https://github.com/chjj/term.js/issues"
+  },
+  "keywords": [
+    "tty",
+    "terminal",
+    "term",
+    "xterm"
+  ],
+  "tags": [
+    "tty",
+    "terminal",
+    "term",
+    "xterm"
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
   "devDependencies": {
-    "express": "3.1.0",
-    "socket.io": "0.9.13",
-    "pty.js": ">= 0.2.13"
+    "express": "^4.16.4"
+  },
+  "dependencies": {
+    "pty.js": "github:p-mcgowan/pty.js",
+    "socket.io": "^2.2.0"
   }
 }
